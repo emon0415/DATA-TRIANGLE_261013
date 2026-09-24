@@ -1,0 +1,166 @@
+{
+  "_説明": "検索の評価セット。expected_docs は正解の文書、expected_emp は正解の人（空なら expected_docs の著者から自動で作る）、negative_docs は上位に来てはいけない文書、searcher_emp は検索者（結果から除外）。 K*b は表題の言葉と重ならない言い回し（看板の効果を測る用）。",
+  "queries": [
+    {
+      "id": "Q1_B1",
+      "text": "設備が故障する前に異常に気づける仕組みを作りたい",
+      "expected_docs": [
+        "KZ-2023-0312",
+        "KZ-2025-0644",
+        "PJ-2022-0018"
+      ],
+      "expected_emp": [
+        "20874",
+        "24518",
+        "10741"
+      ],
+      "negative_docs": [
+        "KZ-2025-0288",
+        "KZ-2025-0295",
+        "PJ-2026-0003"
+      ],
+      "searcher_emp": "10233"
+    },
+    {
+      "id": "Q2_A1",
+      "text": "ベテランのノウハウや判断の基準が人に依存していて、若手に伝わらない",
+      "expected_docs": [
+        "KZ-2024-0210",
+        "KZ-2024-0533",
+        "KZ-2025-0117",
+        "KZ-2025-0489",
+        "PJ-2018-0006"
+      ],
+      "expected_emp": [
+        "21877",
+        "23204",
+        "10488",
+        "30412",
+        "1854"
+      ],
+      "negative_docs": [
+        "KZ-2024-0301",
+        "KZ-2024-0742",
+        "PJ-2022-0005"
+      ],
+      "searcher_emp": null
+    },
+    {
+      "id": "Q3_setup",
+      "text": "品種の切り替えにかかる段取りの時間を短くしたい",
+      "expected_docs": [
+        "KZ-2024-0655",
+        "KZ-2026-0088",
+        "PJ-2025-0006"
+      ],
+      "expected_emp": [
+        "2100",
+        "2795",
+        "2524"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K1_automation",
+      "text": "工場の工程を自動化した経験がある人に相談したい",
+      "expected_docs": [],
+      "expected_emp": [
+        "2346"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K2_it",
+      "text": "社内のIT基盤やシステムの整備に詳しい人を探している",
+      "expected_docs": [],
+      "expected_emp": [
+        "1880"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K3_energy",
+      "text": "工場のエネルギーや水の使用量を減らした経験がある人",
+      "expected_docs": [],
+      "expected_emp": [
+        "2418"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K1b_manual_to_machine",
+      "text": "人の手に頼っている作業を機械に任せたいので、経験者の話を聞きたい",
+      "expected_docs": [],
+      "expected_emp": [
+        "2346"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K2b_digital",
+      "text": "新しいデジタルの仕組みを社内に広めたことがある人",
+      "expected_docs": [],
+      "expected_emp": [
+        "1880"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "K3b_utility_cost",
+      "text": "工場の光熱費を下げたい。実際に取り組んだ人はいるか",
+      "expected_docs": [],
+      "expected_emp": [
+        "2418"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    }
+  ],
+  "cluster_checks": {
+    "must_link_B": [
+      [
+        "KZ-2023-0312",
+        "KZ-2025-0644",
+        "PJ-2022-0018"
+      ],
+      [
+        "KZ-2024-0655",
+        "KZ-2026-0088"
+      ]
+    ],
+    "must_not_link_B": [
+      [
+        "KZ-2025-0288",
+        "KZ-2025-0295"
+      ],
+      [
+        "KZ-2023-0312",
+        "KZ-2025-0288"
+      ],
+      [
+        "KZ-2023-0312",
+        "PJ-2026-0003"
+      ]
+    ],
+    "must_link_A": [
+      [
+        "KZ-2024-0210",
+        "KZ-2024-0533",
+        "KZ-2025-0117",
+        "KZ-2025-0489"
+      ]
+    ],
+    "must_not_link_A": [
+      [
+        "KZ-2024-0301",
+        "KZ-2024-0742"
+      ]
+    ]
+  }
+}
