@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="アーキテクチャ" id="architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="860" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="隠れ出る杭検索　アーキテクチャ図（2026-09-30）" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="0" width="700" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="user" value="社員&lt;br&gt;（ブラウザ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1">
+          <mxGeometry x="420" y="50" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="アプリ（Streamlit・Python）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="140" width="920" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="main" value="app.py&lt;br&gt;入口・タブの切り替え（未作成）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" vertex="1" parent="app">
+          <mxGeometry x="370" y="40" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="reg" value="登録タブ　register/（まよりん・実装済み）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="app">
+          <mxGeometry x="20" y="120" width="430" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="r_page" value="page.py&lt;br&gt;画面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
+          <mxGeometry x="125" y="45" width="180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="r_word" value="word_to_rows.py&lt;br&gt;Wordを読む・チェック" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
+          <mxGeometry x="20" y="125" width="180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="r_db" value="db.py&lt;br&gt;DBの読み書き" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
+          <mxGeometry x="225" y="125" width="185" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="r_emb" value="embed.py&lt;br&gt;章の埋め込み" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
+          <mxGeometry x="225" y="205" width="185" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="srch" value="検索タブ（ほりえもん・作成中）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;swimlaneFillColor=#FFFFFF;rounded=0;dashed=1;" vertex="1" parent="app">
+          <mxGeometry x="470" y="120" width="430" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="s_page" value="画面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
+          <mxGeometry x="125" y="45" width="180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="s_vec" value="ベクトル検索" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
+          <mxGeometry x="20" y="125" width="180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="s_kw" value="キーワード検索&lt;br&gt;SudachiPy" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
+          <mxGeometry x="225" y="125" width="185" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="s_rrf" value="2つの結果を統合&lt;br&gt;RRF" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
+          <mxGeometry x="125" y="205" width="180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="ext" value="外部サービス" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="610" width="920" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="supa" value="&lt;b&gt;Supabase&lt;/b&gt;&lt;br&gt;PostgreSQL＋pgvector&lt;br&gt;documents・document_sections・document_authors&lt;br&gt;employees・departments" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="ext">
+          <mxGeometry x="60" y="45" width="480" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="openai" value="&lt;b&gt;OpenAI API&lt;/b&gt;&lt;br&gt;text-embedding-3-small&lt;br&gt;（1536次元）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="ext">
+          <mxGeometry x="620" y="70" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="batch" value="初期ロード　initial_load/&lt;br&gt;（最初に1回だけ・実行済み）" style="swimlane;fontStyle=1;startSize=40;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="610" width="260" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="b_m" value="load_masters.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
+          <mxGeometry x="20" y="55" width="220" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="b_d" value="load_documents.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
+          <mxGeometry x="20" y="100" width="220" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="b_e" value="embed_sections.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
+          <mxGeometry x="20" y="145" width="220" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="env" value="&lt;b&gt;.env&lt;/b&gt;（各自のPC・Gitには上げない）&lt;br&gt;SUPABASE_URL・SUPABASE_KEY&lt;br&gt;OPENAI_API_KEY&lt;br&gt;アプリと初期ロードが読む" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=14;align=left;spacingLeft=8;fontSize=11;fillColor=#FAEEDA;strokeColor=#854F0B;fontColor=#633806;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="140" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;b&gt;凡例&lt;/b&gt;&lt;br&gt;━ 実線：実装済み&lt;br&gt;┅ 点線：作成中・未作成&lt;br&gt;&lt;font color='#0F6E56'&gt;■&lt;/font&gt; 登録タブ（まよりん）&lt;br&gt;&lt;font color='#534AB7'&gt;■&lt;/font&gt; 検索タブ（ほりえもん）&lt;br&gt;&lt;font color='#993C1D'&gt;■&lt;/font&gt; 外部サービス&lt;br&gt;&lt;font color='#5F5E5A'&gt;■&lt;/font&gt; アプリ全体・初期ロード&lt;br&gt;データの流れは data_flow.md" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="270" width="260" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="user" target="main">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="main" target="r_page">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="main" target="s_page">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_page" target="r_word">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_page" target="r_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_db" target="r_emb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="文書・章・関係者を書き込む&lt;br&gt;マスタで照合" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0;exitY=0.5;entryX=0.3;entryY=0;" edge="1" parent="1" source="r_db" target="supa">
+          <mxGeometry x="0.55" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="埋め込みを保存" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.5;exitY=1;entryX=0.6;entryY=0;" edge="1" parent="1" source="r_emb" target="supa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="章→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.75;entryX=0.7;entryY=0;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="r_emb" target="openai">
+          <mxGeometry x="0.6" relative="1" as="geometry"><Array as="points"><mxPoint x="484" y="494" /><mxPoint x="484" y="590" /><mxPoint x="828" y="590" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_page" target="s_vec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_page" target="s_kw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_vec" target="s_rrf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_kw" target="s_rrf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="相談文→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.45;exitY=1;entryX=0.25;entryY=0;dashed=1;" edge="1" parent="1" source="srch" target="openai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="章と人を探す" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.1;exitY=1;entryX=0.95;entryY=0;dashed=1;" edge="1" parent="1" source="srch" target="supa">
+          <mxGeometry x="-0.3" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="マスタ・373件を投入" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="batch" target="supa">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1140" y="830" /><mxPoint x="340" y="830" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e18" value="章→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="b_e" target="openai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
