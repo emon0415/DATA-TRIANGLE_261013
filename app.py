@@ -1,5 +1,5 @@
 """
-隠れ出る杭検索：画面のモック（DB・OpenAIにはつながない。表示はすべてダミー）
+隠れ出る杭検索：「人を探す」はモック（表示はダミー）、「文書を登録する」は register/page.py につながる
 起動：streamlit run app.py
 """
 import time
@@ -107,30 +107,5 @@ if page == "人を探す":
 
 # ========== 文書を登録する ==========
 else:
-    st.title("文書を登録する")
-    st.markdown('<p class="lead">提案書やPJ文書（Word）をアップロードすると、章ごとに分けてデータベースに登録します。</p>',
-                unsafe_allow_html=True)
-    files = st.file_uploader("Word文書（.docx）", type=["docx"], accept_multiple_files=True)
-    names = [f.name for f in files] if files else []
-    if not names and not st.session_state.get("sample") and st.button("サンプル文書で試す"):
-        st.session_state.sample = True
-    if st.session_state.get("sample") and not names:
-        names = ["KZ-2025-0644.docx"]
-
-    if names:
-        st.write("登録する文書：", "、".join(names))
-        if st.button("データベースに登録する", type="primary"):
-            with st.status("登録しています", expanded=True) as s:
-                for step in ["文書を読み込む", "章ごとに分けて、章の役割を付ける", "キーワードを抽出する（SudachiPy）",
-                             "章を埋め込む（OpenAI）", "データベースに登録する（Supabase）", "関係者の看板を更新する"]:
-                    st.write(f"✓ {step}")
-                    time.sleep(0.6)
-                s.update(label="登録しました", state="complete")
-            st.subheader("登録した内容（例）")
-            st.dataframe({
-                "章": ["現状", "問題点", "提案内容", "期待効果"],
-                "章の役割": ["背景", "課題意識", "行動案", "目標"],
-                "キーワード": ["設備の停止", "異常の兆候", "事前の把握、点検の計画", "停止時間の短縮"],
-                "埋め込み": ["済", "済", "済", "済"],
-            }, hide_index=True)
-            st.caption("登録先：documents、document_sections、document_authors、文書のキーワード。看板は画面には表示しません。")
+    from register.page import show  # 登録タブは本物（DB・OpenAIにつながる）。人を探す側はまだモック
+    show()
