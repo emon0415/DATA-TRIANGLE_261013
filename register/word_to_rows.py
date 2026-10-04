@@ -125,7 +125,10 @@ def read_word(data, filename, masters):
 
     # ---------- 文書情報 → documents ----------
     info = {r[0]: r[1].strip() for r in tables[0] if len(r) >= 2}
-    kind = DOC_TYPES.get(info.get("文書の種類", ""))
+    if "文書の種類" not in info:
+        return empty, ["ひな形と形が違います。1つ目の表（文書情報）に「文書の種類」の行がありません"
+                       "（以前の書式のWordは読めません）"], notes
+    kind = DOC_TYPES.get(info["文書の種類"])
     if kind is None:
         return empty, [f"文書の種類「{info.get('文書の種類', '')}」には対応していません"
                        f"（対応：{'、'.join(DOC_TYPES)}）"], notes
