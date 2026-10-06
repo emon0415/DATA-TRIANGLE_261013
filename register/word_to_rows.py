@@ -290,7 +290,7 @@ def main():
         extra = ""
         if r["removed_sections"] or r["removed_authors"]:
             extra = f"（減った章 {r['removed_sections']}件・著者 {r['removed_authors']}件を削除）"
-        print(f"【{action}】{doc_id}：章 {r['sections']}件、著者 {r['authors']}件{extra}")
+        print(f"【{action}】{doc_id}：章 {r['sections']}件、著者 {r['authors']}件、キーワード {r['keywords']}件{extra}")
     print("章の埋め込みは空のままです。埋め込みの処理で書き込んでください。")
 
 
