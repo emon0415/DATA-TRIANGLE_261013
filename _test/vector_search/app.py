@@ -9,6 +9,7 @@
 #   ・質問文を1回ベクトルにするごとに OpenAI の課金がある（ごくわずか）
 # 必要なもの：pip install streamlit pandas numpy openai supabase python-dotenv
 # =============================================================
+import json
 import sys
 from pathlib import Path
 
@@ -19,16 +20,12 @@ sys.path.insert(0, str(ROOT))
 from register import db                      # noqa: E402
 from search import embed, retrieve           # noqa: E402
 
-# 試しやすい質問文と、上位に来てほしい文書／来てほしくない文書（検証の評価セットから）
+# 試しやすい質問文と、上位に来てほしい文書／来てほしくない文書（評価セット v2 から読む）
+#   文書は文書番号（doc_code）で書いてある。人の正解（expected_emp）は、この画面では使わない
+EVAL_FILE = ROOT / "_test" / "search_eval" / "eval_queries.json"
 SAMPLES = {
-    "設備が故障する前に異常に気づける仕組みを作りたい":
-        {"期待": ["KZ-2023-0312", "KZ-2025-0644", "PJ-2022-0018"],
-         "負例": ["KZ-2025-0288", "KZ-2025-0295", "PJ-2026-0003"]},
-    "ベテランのノウハウや判断の基準が人に依存していて、若手に伝わらない":
-        {"期待": ["KZ-2024-0210", "KZ-2024-0533", "KZ-2025-0117", "KZ-2025-0489", "PJ-2018-0006"],
-         "負例": ["KZ-2024-0301", "KZ-2024-0742", "PJ-2022-0005"]},
-    "品種の切り替えにかかる段取りの時間を短くしたい":
-        {"期待": ["KZ-2024-0655", "KZ-2026-0088", "PJ-2025-0006"], "負例": []},
+    q["text"]: {"期待": q["expected_docs"], "負例": q["negative_docs"]}
+    for q in json.loads(EVAL_FILE.read_text(encoding="utf-8"))["queries"]
 }
 
 
@@ -44,10 +41,10 @@ def query_vector(text):
     return embed.embed_query(text)
 
 
-def mark(doc_id, expect):
-    if doc_id in expect["期待"]:
+def mark(doc_code, expect):
+    if doc_code in expect["期待"]:
         return "✅ 期待"
-    if doc_id in expect["負例"]:
+    if doc_code in expect["負例"]:
         return "⚠️ 負例"
     return ""
 
@@ -79,17 +76,17 @@ if st.button("検索する", type="primary") and text.strip():
     hits = retrieve.vector_search(qvec, sections, matrix, k=len(sections))
     docs = retrieve.to_documents(hits)
     if expect["期待"] or expect["負例"]:
-        docs["確認"] = docs.doc_id.map(lambda d: mark(d, expect))
-        hits["確認"] = hits.doc_id.map(lambda d: mark(d, expect))
-        found = docs[docs["確認"] != ""][["doc_id", "rank", "確認"]]
+        docs["確認"] = docs.doc_code.map(lambda d: mark(d, expect))
+        hits["確認"] = hits.doc_code.map(lambda d: mark(d, expect))
+        found = docs[docs["確認"] != ""][["doc_code", "rank", "確認"]]
         st.subheader("期待・負例の文書の順位（文書の単位）")
         st.dataframe(found, hide_index=True)
 
     left, right = st.columns(2)
     with left:
         st.subheader(f"文書の上位 {min(k, len(docs))} 件")
-        st.dataframe(docs.head(k), hide_index=True)
+        st.dataframe(docs.drop(columns=["doc_id"]).head(k), hide_index=True)
     with right:
         st.subheader(f"章の上位 {k} 本")
         view = hits.head(k).assign(本文=lambda d: d.body.str.slice(0, 60))
-        st.dataframe(view.drop(columns=["body", "section_id", "embedding_model"]), hide_index=True)
+        st.dataframe(view.drop(columns=["body", "section_id", "doc_id", "embedding_model"]), hide_index=True)
