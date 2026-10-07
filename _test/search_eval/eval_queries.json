@@ -1,68 +1,159 @@
 {
-  "_説明": "検索の評価セット。expected_docs は正解の文書、expected_emp は正解の人（空なら expected_docs の著者から自動で作る）、negative_docs は上位に来てはいけない文書、searcher_emp は検索者（結果から除外）。 K*b は表題の言葉と重ならない言い回し（看板の効果を測る用）。",
+  "_説明": "昇降機の設定の評価セット（v2）。expected_docs は正解の文書、expected_emp は正解の人、negative_docs は上位に来てはいけない文書、searcher_emp は検索者（結果から除外）。",
   "queries": [
     {
-      "id": "Q1_B1",
-      "text": "設備が故障する前に異常に気づける仕組みを作りたい",
+      "id": "Q1_remote",
+      "story": "①遠隔での見守り",
+      "text": "点検に行かなくても、昇降機の調子が悪くなり始めたことに気づける仕組みがほしい",
       "expected_docs": [
         "KZ-2023-0312",
         "KZ-2025-0644",
-        "PJ-2022-0018"
+        "PJ-2022-0018",
+        "IDEA-2025-0023",
+        "IDEA-2025-0069",
+        "IDEA-2026-0015",
+        "IDEA-2026-0046",
+        "IDEA-2026-0108",
+        "IDEA-2026-0155"
       ],
       "expected_emp": [
         "20874",
         "24518",
-        "10741"
+        "10741",
+        "3304",
+        "3733",
+        "32876"
       ],
       "negative_docs": [
         "KZ-2025-0288",
         "KZ-2025-0295",
-        "PJ-2026-0003"
+        "IDEA-2026-0050"
       ],
       "searcher_emp": "10233"
     },
     {
-      "id": "Q2_A1",
-      "text": "ベテランのノウハウや判断の基準が人に依存していて、若手に伝わらない",
+      "id": "Q2_skill",
+      "story": "②技術の継承",
+      "text": "ベテランが持っている判断の勘所を、若手に伝える方法を知りたい",
       "expected_docs": [
         "KZ-2024-0210",
         "KZ-2024-0533",
         "KZ-2025-0117",
         "KZ-2025-0489",
-        "PJ-2018-0006"
+        "PJ-2018-0006",
+        "IDEA-2025-0052",
+        "IDEA-2026-0009",
+        "IDEA-2026-0039",
+        "IDEA-2026-0085",
+        "IDEA-2026-0139"
       ],
       "expected_emp": [
         "21877",
         "23204",
         "10488",
         "30412",
-        "1854"
+        "1854",
+        "33445"
       ],
       "negative_docs": [
         "KZ-2024-0301",
-        "KZ-2024-0742",
-        "PJ-2022-0005"
+        "KZ-2024-0742"
       ],
       "searcher_emp": null
     },
     {
-      "id": "Q3_setup",
-      "text": "品種の切り替えにかかる段取りの時間を短くしたい",
+      "id": "Q3_panel",
+      "story": "③制御盤の改修",
+      "text": "古い昇降機を全部替えずに、費用を抑えて長く使えるようにしたい",
       "expected_docs": [
         "KZ-2024-0655",
         "KZ-2026-0088",
-        "PJ-2025-0006"
+        "PJ-2020-0009",
+        "IDEA-2025-0039",
+        "IDEA-2025-0087",
+        "IDEA-2026-0031",
+        "IDEA-2026-0088",
+        "IDEA-2026-0149"
       ],
       "expected_emp": [
         "2100",
         "2795",
-        "2524"
+        "1671",
+        "3921",
+        "3660"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "Q4_notice",
+      "story": "点検のお知らせ",
+      "text": "点検で昇降機が止まると、住民から苦情が来て困っている",
+      "expected_docs": [
+        "PJ-2025-0010",
+        "IDEA-2025-0009",
+        "IDEA-2025-0043",
+        "IDEA-2025-0061",
+        "IDEA-2025-0095",
+        "IDEA-2026-0023",
+        "IDEA-2026-0064",
+        "IDEA-2026-0100",
+        "IDEA-2026-0165"
+      ],
+      "expected_emp": [
+        "3207",
+        "1812",
+        "3773"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "Q5_competitor",
+      "story": "他社の見積もり",
+      "text": "独立系の保守会社に、顧客を取られそうで心配だ",
+      "expected_docs": [
+        "PJ-2023-0012",
+        "IDEA-2025-0028",
+        "IDEA-2025-0082",
+        "IDEA-2026-0017",
+        "IDEA-2026-0054",
+        "IDEA-2026-0118",
+        "IDEA-2026-0171"
+      ],
+      "expected_emp": [
+        "1518",
+        "3375",
+        "3901",
+        "3849"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
+      "id": "Q6_co2",
+      "story": "CO2の見える化",
+      "text": "CO2の削減を求められて、昇降機の更新を迷っているオーナーを後押ししたい",
+      "expected_docs": [
+        "PJ-2026-0009",
+        "IDEA-2025-0059",
+        "IDEA-2025-0092",
+        "IDEA-2026-0028",
+        "IDEA-2026-0077",
+        "IDEA-2026-0123",
+        "IDEA-2026-0162"
+      ],
+      "expected_emp": [
+        "1619",
+        "3667",
+        "1751"
       ],
       "negative_docs": [],
       "searcher_emp": null
     },
     {
       "id": "K1_automation",
+      "story": "看板",
       "text": "工場の工程を自動化した経験がある人に相談したい",
       "expected_docs": [],
       "expected_emp": [
@@ -72,7 +163,19 @@
       "searcher_emp": null
     },
     {
+      "id": "K1b_manual_to_machine",
+      "story": "看板",
+      "text": "人の手に頼っている作業を機械に任せたいので、経験者の話を聞きたい",
+      "expected_docs": [],
+      "expected_emp": [
+        "2346"
+      ],
+      "negative_docs": [],
+      "searcher_emp": null
+    },
+    {
       "id": "K2_it",
+      "story": "看板",
       "text": "社内のIT基盤やシステムの整備に詳しい人を探している",
       "expected_docs": [],
       "expected_emp": [
@@ -83,6 +186,7 @@
     },
     {
       "id": "K3_energy",
+      "story": "看板",
       "text": "工場のエネルギーや水の使用量を減らした経験がある人",
       "expected_docs": [],
       "expected_emp": [
@@ -92,31 +196,12 @@
       "searcher_emp": null
     },
     {
-      "id": "K1b_manual_to_machine",
-      "text": "人の手に頼っている作業を機械に任せたいので、経験者の話を聞きたい",
+      "id": "P1_hirano",
+      "story": "熱心な投稿者",
+      "text": "保守の料金の安さで比べられないようにする方法を、一緒に考えてくれる人",
       "expected_docs": [],
       "expected_emp": [
-        "2346"
-      ],
-      "negative_docs": [],
-      "searcher_emp": null
-    },
-    {
-      "id": "K2b_digital",
-      "text": "新しいデジタルの仕組みを社内に広めたことがある人",
-      "expected_docs": [],
-      "expected_emp": [
-        "1880"
-      ],
-      "negative_docs": [],
-      "searcher_emp": null
-    },
-    {
-      "id": "K3b_utility_cost",
-      "text": "工場の光熱費を下げたい。実際に取り組んだ人はいるか",
-      "expected_docs": [],
-      "expected_emp": [
-        "2418"
+        "3849"
       ],
       "negative_docs": [],
       "searcher_emp": null
@@ -131,7 +216,20 @@
       ],
       [
         "KZ-2024-0655",
-        "KZ-2026-0088"
+        "KZ-2026-0088",
+        "PJ-2020-0009"
+      ],
+      [
+        "KZ-2024-0210",
+        "PJ-2018-0006"
+      ],
+      [
+        "IDEA-2026-0015",
+        "PJ-2022-0018"
+      ],
+      [
+        "IDEA-2025-0039",
+        "PJ-2020-0009"
       ]
     ],
     "must_not_link_B": [
@@ -144,8 +242,8 @@
         "KZ-2025-0288"
       ],
       [
-        "KZ-2023-0312",
-        "PJ-2026-0003"
+        "IDEA-2026-0050",
+        "PJ-2022-0018"
       ]
     ],
     "must_link_A": [
