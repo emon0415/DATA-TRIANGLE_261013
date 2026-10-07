@@ -118,7 +118,12 @@ def query_text(text):
     return " OR ".join(quote(w) for w in query_terms(text))
 
 
+def keyword_counts(text, top_n=5):
+    """キーワードと出現回数の組を、多い順に返す（document_keywords に入れる形）"""
+    c = Counter(t.text for t in terms(text) if t.kind != "part" and len(t.text) >= 2)
+    return c.most_common(top_n)
+
+
 def keywords(text, top_n=5):
     """画面に出すキーワード。複合語・単独の語・型番から、出現回数の多い順に選ぶ"""
-    c = Counter(t.text for t in terms(text) if t.kind != "part" and len(t.text) >= 2)
-    return [w for w, _ in c.most_common(top_n)]
+    return [w for w, _ in keyword_counts(text, top_n)]

@@ -66,8 +66,8 @@ def register(results):
         for filename, (rows, _, _) in results.items():
             doc_id = rows["documents"][0]["doc_id"]
             try:
-                save_document(sb, rows)
-                st.write(f"✓ {doc_id}：文書・章・関係者をデータベースに登録しました")
+                r = save_document(sb, rows)
+                st.write(f"✓ {doc_id}：文書・章・関係者と、キーワード {r['keywords']}件をデータベースに登録しました")
                 n = embed_document(sb, rows)
                 st.write(f"✓ {doc_id}：章 {n}件を埋め込みました")
                 done.append(doc_id)

@@ -3,11 +3,15 @@
 #
 # 接続情報は data-triangle フォルダ直下の .env から読む
 #   SUPABASE_URL、SUPABASE_KEY
+# 全文検索の列とキーワードは search/tokenizer.py で作る（pip install sudachipy sudachidict_core）
 # =============================================================
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))  # register/ から直接実行したときも search/ を読めるように
 
 
 def connect():
@@ -57,12 +61,19 @@ def save_document(sb, rows):
       cluster_members が section_id を参照しているため、章を消して入れ直すことはしない
     ・上書きした章の埋め込みは空に戻す（本文が変わっているかもしれないため。あとで埋め込み直す）
     ・新しい版で減った章と著者だけを消す
+    ・全文検索の列（body_tokens）と、文書のキーワード（document_keywords）もここで作る
     ・途中で失敗しても、同じWordでもう一度実行すれば正しい状態になる"""
+    from search.tokenizer import index_text, keyword_counts
+
     doc = rows["documents"][0]
     doc_id = doc["doc_id"]
-    sections = [{**s, "embedding": None, "embedding_model": None, "embedded_at": None}
+    sections = [{**s, "body_tokens": index_text(s["body"]),
+                 "embedding": None, "embedding_model": None, "embedded_at": None}
                 for s in rows["document_sections"]]
     authors = rows["document_authors"]
+    # キーワードは表題と全章の本文から選ぶ
+    doc_text = "\n".join([doc["title"] or ""] + [s["body"] for s in sections])
+    keywords = [{"doc_id": doc_id, "keyword": w, "count": n} for w, n in keyword_counts(doc_text)]
 
     # 文書 → 章 → 著者の順（章と著者は文書を参照しているため）
     sb.table("documents").upsert(doc, on_conflict="doc_id").execute()
@@ -73,5 +84,9 @@ def save_document(sb, rows):
     keep = [a["emp_no"] for a in authors]
     removed_authors = (sb.table("document_authors").delete()
                        .eq("doc_id", doc_id).not_.in_("emp_no", keep).execute().data)
-    return {"sections": len(sections), "authors": len(authors),
+    # キーワードは前の版の分を消して入れ直す（ほかの表から参照されていないため）
+    sb.table("document_keywords").delete().eq("doc_id", doc_id).execute()
+    if keywords:
+        sb.table("document_keywords").insert(keywords).execute()
+    return {"sections": len(sections), "authors": len(authors), "keywords": len(keywords),
             "removed_sections": len(removed_sections), "removed_authors": len(removed_authors)}
