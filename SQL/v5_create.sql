@@ -126,11 +126,27 @@ create table profiles (
     emp_id           bigint primary key references employees (emp_id) on delete cascade,
     profile_text     text not null check (char_length(btrim(profile_text)) between 1 and 3000),
     source_doc_count int  not null check (source_doc_count >= 0),
-    model            text not null check (char_length(model) between 1 and 100),
+    model            text check (char_length(model) between 1 and 100),   -- ノートを並べただけなら空
     generated_at     timestamptz not null default now(),
     embedding        vector(1536),
     embedding_model  text,
     embedded_at      timestamptz
+);
+
+-- 看板のノート。1人に何枚も持つ。文書由来のノートは doc_id で元の文書を持ち（根拠の出典）、
+-- 種類（意欲／実行力）は documents.doc_type で決まる。カルテ（本人入力）だけ doc_id が空
+create table profile_notes (
+    note_id     bigint generated always as identity primary key,
+    emp_id      bigint not null references employees (emp_id) on delete cascade,
+    doc_id      bigint references documents (doc_id) on delete cascade,
+    body        text   not null check (char_length(btrim(body)) between 1 and 1000),
+    body_source text   not null check (body_source in ('抜粋', '要約', '本人入力')),
+    model       text   check (char_length(btrim(model)) between 1 and 100),
+    created_at  timestamptz not null default now(),
+    updated_at  timestamptz not null default now(),
+    check ((doc_id is null) = (body_source = '本人入力')),
+    check ((body_source = '要約') = (model is not null)),
+    unique (emp_id, doc_id)
 );
 
 create table tags (
@@ -198,6 +214,7 @@ create index document_keywords_keyword_idx on document_keywords (keyword);
 create index documents_type_idx          on documents (doc_type);
 create index employees_dept_idx          on employees (dept_id);
 create index tags_emp_idx                on tags (emp_id);
+create index profile_notes_doc_idx     on profile_notes (doc_id) where doc_id is not null;
 create index clusters_run_idx            on clusters (run_id);
 create index cluster_members_section_idx on cluster_members (section_id);
 -- document_sections は unique (doc_id, section_no) があるので doc_id 単独の索引は不要
