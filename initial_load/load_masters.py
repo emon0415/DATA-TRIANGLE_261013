@@ -1,111 +1,56 @@
 # =============================================================
-# load_masters.py — 部署マスタと社員マスタを Supabase に入れる
+# load_masters.py — 部署マスタと社員マスタを Supabase に入れる（v5用）
 #
-# 使い方（_test フォルダで実行）：
+# 使い方（initial_load フォルダで実行）：
 #   python load_masters.py --dry-run   読むだけ。DBには書き込まない（最初はこちら）
 #   python load_masters.py             DBに書き込む
 #
 # 前提：
-#   ・_test/masters/ に departments.json と employees.json を置く
-#   ・data-triangle フォルダ直下の .env に SUPABASE_URL と SUPABASE_KEY を書く
-#   ・同じIDがすでにあれば上書き（upsert）するので、何度実行しても重複しない
+#   ・SQL/v5_create.sql を実行済み
+#   ・initial_load/data/ に db_load_673.json を置く（部署と社員もこのJSONから読む）
+#   ・リポジトリ直下の .env に SUPABASE_URL と SUPABASE_KEY を書く
+#   ・同じ番号（dept_code、emp_no）があれば上書き（upsert）するので、何度実行しても重複しない
 # =============================================================
-import json
-import os
 import sys
-from pathlib import Path
 
-HERE = Path(__file__).parent
-MASTER_DIR = HERE / "masters"
+import loadlib as lib
 
-# DBの棚にある列だけを取り出す（JSONの tier などDBにない項目は捨てる）
-TABLES = [
-    # (棚の名前, JSONファイル, 列, 必須の列)
-    ("departments", "departments.json",
-     ["dept_id", "dept_name", "dept_type"],
-     ["dept_id", "dept_name", "dept_type"]),
-    ("employees", "employees.json",
-     ["emp_no", "name", "dept_id", "site", "title"],
-     ["emp_no", "name", "dept_id"]),
-]
-CHUNK = 200  # 一度に送る行数
-
-
-def clean(value):
-    """前後の空白を取り、空文字は NULL（None）にする。社員番号などは文字列にそろえる"""
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
-
-
-def read_rows(filename, columns, required):
-    path = MASTER_DIR / filename
-    if not path.exists():
-        sys.exit(f"ファイルが見つかりません：{path}")
-    data = json.loads(path.read_text(encoding="utf-8"))
-
-    rows, problems = [], []
-    for i, item in enumerate(data, start=1):
-        row = {c: clean(item.get(c)) for c in columns}
-        empty = [c for c in required if row[c] is None]
-        if empty:
-            problems.append(f"{i}件目：必須の列が空（{', '.join(empty)}）")
-        rows.append(row)
-
-    ids = [r[columns[0]] for r in rows]
-    dup = sorted({x for x in ids if ids.count(x) > 1})
-    if dup:
-        problems.append(f"IDの重複：{', '.join(dup)}")
-
-    dropped = sorted({k for item in data for k in item} - set(columns))
-    return rows, problems, dropped
+DEPT = [("dept_code", "dept_id"), ("dept_name", None), ("dept_type", None)]
+# 社員の dept_code は、DBに入れる前に bigint の dept_id に置き換える
+EMP = [("emp_no", None), ("name", None), ("dept_code", "dept_id"),
+       ("site", None), ("title", None), ("is_active", None)]
 
 
 def main():
     dry_run = "--dry-run" in sys.argv
+    data = lib.load_json()
 
-    # ---------- 読む・整える ----------
-    prepared = []
-    has_problem = False
-    for table, filename, columns, required in TABLES:
-        rows, problems, dropped = read_rows(filename, columns, required)
-        print(f"【{table}】{filename}：{len(rows)}件")
+    depts, p1, d1 = lib.read_rows(data, "departments", DEPT, ["dept_code", "dept_name", "dept_type"], ["dept_code"])
+    emps, p2, d2 = lib.read_rows(data, "employees", EMP, ["emp_no", "name", "dept_code"], ["emp_no"])
+    problems = []
+    for label, rows, p, dropped in (("departments", depts, p1, d1), ("employees", emps, p2, d2)):
+        print(f"【{label}】{len(rows)}件")
         if dropped:
             print(f"   DBにない項目は入れません：{', '.join(dropped)}")
-        for p in problems:
-            print(f"   × {p}")
-        has_problem |= bool(problems)
-        prepared.append((table, rows))
+        problems += p
 
-    # 社員の部署が、部署マスタにあるか（外部キーの事前チェック）
-    dept_ids = {r["dept_id"] for r in prepared[0][1]}
-    unknown = sorted({r["dept_id"] for r in prepared[1][1]} - dept_ids)
+    unknown = lib.unmapped(emps, "dept_code", {r["dept_code"] for r in depts})
     if unknown:
-        print(f"   × 部署マスタにない部署IDを持つ社員がいます：{', '.join(unknown)}")
-        has_problem = True
-
-    if has_problem:
+        problems.append(f"部署にない部署番号を持つ社員がいます：{', '.join(unknown)}")
+    for p in problems:
+        print(f"   × {p}")
+    if problems:
         sys.exit("\n問題があるため、DBには書き込みませんでした。")
     if dry_run:
         print("\n--dry-run のため、ここで終了します（DBには書き込んでいません）。")
         return
 
-    # ---------- 入れる ----------
-    from dotenv import load_dotenv
-    from supabase import create_client
-
-    load_dotenv(HERE.parent / ".env")
-    url, key = os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        sys.exit(".env に SUPABASE_URL と SUPABASE_KEY が見つかりません。")
-    sb = create_client(url, key)
-
-    for table, rows in prepared:  # 部署 → 社員の順（順番が大事）
-        for start in range(0, len(rows), CHUNK):
-            sb.table(table).upsert(rows[start:start + CHUNK]).execute()
-        count = sb.table(table).select("*", count="exact", head=True).execute().count
-        print(f"【{table}】書き込み完了。DBの件数：{count}件")
+    sb = lib.connect()
+    lib.upsert(sb, "departments", depts, "dept_code")          # 部署 → 社員の順
+    dept_map = lib.fetch_map(sb, "departments", "dept_code", "dept_id")
+    for r in emps:
+        r["dept_id"] = dept_map[r.pop("dept_code")]
+    lib.upsert(sb, "employees", emps, "emp_no")
 
 
 if __name__ == "__main__":
