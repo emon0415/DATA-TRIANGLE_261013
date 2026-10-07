@@ -13,14 +13,29 @@ from dataclasses import dataclass
 # 役割の重み（5-1の決定。投稿者は未決なので、提案者と同じ1.0を仮置き）
 ROLE_WEIGHT = {"提案者": 1.0, "主担当": 1.0, "副担当": 0.6, "責任者": 0.3, "投稿者": 1.0}
 
+# 画面で選ぶ3段階と、その数値（左から、弱い順）
+ROLE_LEVELS = {"あまり考慮しない": 0.3, "ふつう": 0.6, "重視": 1.0}
+# 既定の段階。数値にすると ROLE_WEIGHT と同じになる
+DEFAULT_ROLE_LEVELS = {"提案者": "重視", "主担当": "重視", "副担当": "ふつう",
+                       "責任者": "あまり考慮しない", "投稿者": "重視"}
+
+
+def role_weights(levels):
+    """役割ごとの段階（{役割: "重視" など}）を、数値の重み（{役割: 1.0 など}）にする"""
+    return {role: ROLE_LEVELS[level] for role, level in levels.items()}
+
 
 # ---------- 1. 統合：RRF ----------
-def rrf(rankings, k=60):
-    """順位のリスト（それぞれ、よい順のIDの並び）を1つにまとめる。戻り値：{ID: スコア}"""
+def rrf(rankings, k=60, weights=None):
+    """順位のリスト（それぞれ、よい順のIDの並び）を1つにまとめる。戻り値：{ID: スコア}
+    weights：順位ごとの比重（省略すると全部1.0）。0以下の順位は使わない"""
+    weights = [1.0] * len(rankings) if weights is None else list(weights)
     score = defaultdict(float)
-    for ranking in rankings:
+    for ranking, w in zip(rankings, weights):
+        if w <= 0:
+            continue
         for rank, item in enumerate(ranking, start=1):
-            score[item] += 1.0 / (k + rank)
+            score[item] += w / (k + rank)
     return dict(score)
 
 

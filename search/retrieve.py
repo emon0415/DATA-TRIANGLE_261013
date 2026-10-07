@@ -74,6 +74,8 @@ def fulltext_search(sb, query, n=FTS_N):
     return [r["section_id"] for r in rows]
 
 
-def hybrid_scores(vector_ids, fts_ids, k=RRF_K):
-    """ベクトルと全文の章の順位をRRFで統合する。片方が空なら、もう片方だけの順位になる"""
-    return rank.rrf([r for r in (vector_ids, fts_ids) if r], k=k)
+def hybrid_scores(vector_ids, fts_ids, k=RRF_K, w_vector=1.0, w_fts=1.0):
+    """ベクトルと全文の章の順位をRRFで統合する。w_* は比重（0なら、その順位は使わない）。
+    片方が空なら、もう片方だけの順位になる。比重は、2つの比率だけが効く（0.5と0.5は1と1と同じ）"""
+    pairs = [(r, w) for r, w in ((vector_ids, w_vector), (fts_ids, w_fts)) if r]
+    return rank.rrf([r for r, _ in pairs], k=k, weights=[w for _, w in pairs])

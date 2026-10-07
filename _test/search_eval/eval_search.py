@@ -64,39 +64,52 @@ def load(sb):
     """順位づけに必要なデータをDBから読む"""
     sections, matrix = retrieve.load_section_vectors(sb)
     docs = fetch_all(sb, "documents",
-                     "doc_id,doc_code,doc_type,result,pj_status,submitted_at,started_at", ["doc_id"])
+                     "doc_id,doc_code,title,doc_type,result,pj_status,submitted_at,started_at", ["doc_id"])
     authors = fetch_all(sb, "document_authors", "doc_id,emp_id,role", ["doc_id", "emp_id"])
-    emps = fetch_all(sb, "employees", "emp_id,emp_no,dept_id,is_active", ["emp_id"])
+    emps = fetch_all(sb, "employees", "emp_id,emp_no,name,dept_id,is_active", ["emp_id"])
+    depts = fetch_all(sb, "departments", "dept_id,dept_name", ["dept_id"])
     corpus = rank.Corpus.from_rows(sections[["section_id", "doc_id"]].to_dict("records"),
                                    docs, authors, emps)
     return {
         "sections": sections, "matrix": matrix, "corpus": corpus,
         "doc_code": {d["doc_id"]: d["doc_code"] for d in docs},
+        "doc_title": {d["doc_id"]: d["title"] for d in docs},
         "emp_no": {e["emp_id"]: e["emp_no"] for e in emps},
+        "emp_name": {e["emp_id"]: e["name"] for e in emps},
         "emp_id_of": {e["emp_no"]: e["emp_id"] for e in emps},
+        "dept_name": {d["dept_id"]: d["dept_name"] for d in depts},
     }
+
+
+def rankings(sb, ctx, text):
+    """質問文から、ベクトルと全文の「章IDの並び」を作る。
+    戻り値：(ベクトルの並び, 全文の並び, 全文を呼べなかったときの理由)。呼べなければ全文の並びは None"""
+    qvec = embed.embed_query(text)
+    hits = retrieve.vector_search(qvec, ctx["sections"], ctx["matrix"], k=N)
+    vec = hits["section_id"].tolist()
+    try:
+        return vec, retrieve.fulltext_search(sb, text, n=N), None
+    except Exception as e:                      # 関数がまだない、権限がない、など
+        return vec, None, str(e)[:300]
 
 
 def section_scores(sb, ctx, text, warnings):
     """質問文から、方法ごとの {章ID: スコア} を作る"""
-    qvec = embed.embed_query(text)
-    hits = retrieve.vector_search(qvec, ctx["sections"], ctx["matrix"], k=N)
-    vec = hits["section_id"].tolist()
+    vec, fts, err = rankings(sb, ctx, text)
     out = {"ベクトルのみ": rank.rrf([vec])}
-    try:
-        fts = retrieve.fulltext_search(sb, text, n=N)
-    except Exception as e:                      # 関数がまだない、権限がない、など
-        warnings.add(str(e)[:300])
+    if fts is None:
+        warnings.add(err)
         return out
     out["全文のみ"] = rank.rrf([fts]) if fts else {}
     out["ハイブリッド(RRF)"] = retrieve.hybrid_scores(vec, fts)
     return out
 
 
-def score_query(scores, q, ctx):
+def score_query(scores, q, ctx, **rank_kwargs):
+    """rank_kwargs は rank.rank_people にそのまま渡す（role_weight、beta など）"""
     corpus = ctx["corpus"]
     searcher = ctx["emp_id_of"].get(q.get("searcher_emp"))
-    res = rank.rank_people(scores, corpus, searcher=searcher, top_n=10 ** 6)
+    res = rank.rank_people(scores, corpus, searcher=searcher, top_n=10 ** 6, **rank_kwargs)
     people = sorted(res["proven"] + res["hidden"], key=lambda p: -p["score"])
     people_no = [ctx["emp_no"][p["emp"]] for p in people]
     exp = set(q["expected_emp"])
