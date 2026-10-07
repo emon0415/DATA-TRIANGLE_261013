@@ -41,3 +41,12 @@ def embed_query(text):
     """質問文を1本のベクトルにする"""
     res = _client().embeddings.create(model=MODEL, input=[text])
     return normalize(res.data[0].embedding)
+
+
+def embed_texts(texts, chunk=100):
+    """文章のリストを、そのままのベクトル（DBに入れる形）のリストにする。看板の埋め込みに使う"""
+    out = []
+    for start in range(0, len(texts), chunk):
+        res = _client().embeddings.create(model=MODEL, input=texts[start:start + chunk])
+        out += [d.embedding for d in res.data]
+    return out
