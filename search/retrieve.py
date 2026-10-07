@@ -1,21 +1,25 @@
 # =============================================================
-# retrieve.py — 候補を集める（いまはベクトル検索だけ）
+# retrieve.py — 候補を集める（ベクトル検索＋全文検索、RRFで統合）
 #
 # いまのやり方：DB から章のベクトルをまとめて読み、手元で質問文との類似度を計算する
 #   章は千数百本なので、全件と比べても一瞬で終わる
 #   DB側にベクトル検索の関数（RPC）ができたら、vector_search の中身だけ差し替える
 #
-# 全文検索（PGroonga）と、2つの順位の統合（RRF）は、あとでここに足す
+# 全文検索：DBの関数 search_sections_fts（SQL/v5_search_fts.sql）を rpc で呼ぶ
+# 統合：hybrid_scores() が、2つの章の順位を RRF でまとめ、{章ID: スコア} を返す
+#       → search/rank.py の rank_people() にそのまま渡せる
 # =============================================================
 import json
 
 import numpy as np
 import pandas as pd
 
+from search import rank, tokenizer
 from search.embed import normalize
 
+# v5：doc_id は bigint。人が読む文書番号（KZ-2024-0147 など）は documents.doc_code にある
 SECTION_COLS = ("section_id, doc_id, section_no, section_name, section_role, body, embedding_model, embedding, "
-                "documents(title, doc_type)")
+                "documents(doc_code, title, doc_type)")
 
 
 def load_section_vectors(sb, page=500):
@@ -34,7 +38,7 @@ def load_section_vectors(sb, page=500):
         e = r.pop("embedding")
         vecs.append(json.loads(e) if isinstance(e, str) else e)   # DB からは文字列で返ってくる
         d = r.pop("documents") or {}
-        r["title"], r["doc_type"] = d.get("title"), d.get("doc_type")
+        r["doc_code"], r["title"], r["doc_type"] = d.get("doc_code"), d.get("title"), d.get("doc_type")
     return pd.DataFrame(rows), normalize(np.array(vecs, dtype=np.float32))
 
 
@@ -51,7 +55,25 @@ def vector_search(qvec, sections, matrix, k=200):
 def to_documents(hits):
     """章の結果を文書の単位にまとめる（文書の点数＝その文書で最も近い章の点数）"""
     best = hits.sort_values("score", ascending=False).drop_duplicates("doc_id")
-    out = best[["doc_id", "title", "doc_type", "score", "section_name"]].rename(
+    out = best[["doc_id", "doc_code", "title", "doc_type", "score", "section_name"]].rename(
         columns={"section_name": "最も近い章"}).reset_index(drop=True)
     out.insert(0, "rank", range(1, len(out) + 1))
     return out
+
+# ---------- 全文検索と統合 ----------
+FTS_N = 100   # 各順位から取る章の数（仮置き）
+RRF_K = 60    # RRFの定数（仮置き）
+
+
+def fulltext_search(sb, query, n=FTS_N):
+    """質問文から語を取り出し、PGroongaで章を検索する。戻り値：[章ID]（スコアの高い順）"""
+    q = tokenizer.query_text(query)
+    if not q:                      # 名詞が取れない質問文は、全文側は空にする
+        return []
+    rows = sb.rpc("search_sections_fts", {"q": q, "n": n}).execute().data
+    return [r["section_id"] for r in rows]
+
+
+def hybrid_scores(vector_ids, fts_ids, k=RRF_K):
+    """ベクトルと全文の章の順位をRRFで統合する。片方が空なら、もう片方だけの順位になる"""
+    return rank.rrf([r for r in (vector_ids, fts_ids) if r], k=k)
