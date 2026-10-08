@@ -36,7 +36,7 @@ def main():
     lens = sorted(len(v["text"]) for v in built.values())
     print(f"看板を作る人：{r['people']}人／ノート：{r['notes']}枚（文書由来）")
     if lens:
-        print(f"看板の文章の長さ：中央 {lens[len(lens) // 2]}字／最大 {lens[-1]}字（上限 3000字）")
+        print(f"看板の文章の長さ：中央 {lens[len(lens) // 2]}字／最大 {lens[-1]}字（上限 6000字）")
     cut = sum(1 for v in built.values() if v["used"] < len(v["notes"]))
     print(f"長すぎて古いノートを外した人：{cut}人")
     print(f"書き込む看板（新規または文章が変わった人）：{r['profiles']}人")

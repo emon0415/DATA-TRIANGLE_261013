@@ -8,7 +8,7 @@
 #   rebuild(sb, emp_ids={5, 9})      この人たちだけ（文書の登録のあとに、著者の分を作り直す）
 #
 # 守ること：
-#   ・本人が書いたカルテのノートは、読むだけで書き換えない
+#   ・本人が書いたキャリアシートのノートは、読むだけで書き換えない
 #   ・要約（body_source='要約'）にしたノートは、抜粋で上書きしない
 #   ・文書が変わって、ノートが作れなくなったとき（章が消えた、など）の古いノートは、消さずに残す
 # =============================================================
@@ -42,7 +42,7 @@ def read_all(sb):
     keywords = {}
     for k in fetch_all(sb, "document_keywords", "doc_id,keyword,count", ["doc_id", "keyword"]):
         keywords.setdefault(k["doc_id"], []).append((k["keyword"], k["count"]))
-    notes = fetch_all(sb, "profile_notes", "note_id,emp_id,doc_id,body,body_source,created_at", ["note_id"])
+    notes = fetch_all(sb, "profile_notes", "note_id,emp_id,doc_id,body,body_source,memo_kind,created_at,updated_at", ["note_id"])
     memos = {}
     for n in notes:
         if n["body_source"] == "本人入力":

@@ -124,9 +124,9 @@ create table document_keywords (
 -- ---------- AI生成物 ----------
 create table profiles (
     emp_id           bigint primary key references employees (emp_id) on delete cascade,
-    profile_text     text not null check (char_length(btrim(profile_text)) between 1 and 3000),
+    profile_text     text not null check (char_length(btrim(profile_text)) between 1 and 6000),
     source_doc_count int  not null check (source_doc_count >= 0),
-    model            text check (char_length(model) between 1 and 100),   -- ノートを並べただけなら空
+    model            text not null check (char_length(model) between 1 and 100),
     generated_at     timestamptz not null default now(),
     embedding        vector(1536),
     embedding_model  text,
@@ -142,11 +142,14 @@ create table profile_notes (
     body        text   not null check (char_length(btrim(body)) between 1 and 1000),
     body_source text   not null check (body_source in ('抜粋', '要約', '本人入力')),
     model       text   check (char_length(btrim(model)) between 1 and 100),
+    memo_kind   text   check (memo_kind in ('現在の職務', '将来やりたいこと', 'そのために取り組んでいること')),   -- キャリアシートの項目
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now(),
     check ((doc_id is null) = (body_source = '本人入力')),
     check ((body_source = '要約') = (model is not null)),
-    unique (emp_id, doc_id)
+    check ((memo_kind is not null) = (body_source = '本人入力')),
+    unique (emp_id, doc_id),
+    unique (emp_id, memo_kind)
 );
 
 create table tags (

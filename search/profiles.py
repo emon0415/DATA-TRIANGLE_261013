@@ -2,8 +2,9 @@
 # profiles.py — 看板（profiles）の文章を作る。DBもOpenAIも使わない（入れた値だけで決まる）
 #
 # 看板 ＝ その人のノートを、日付の順に並べた1つの文章。
-#   ・文書由来のノート … 文書1件につき1枚。意欲（提案・アイデア）か、実行力（PJ）かは、文書の種類で決まる
-#   ・カルテのノート   … 本人の入力（文書を持たない）
+#   ・文書由来のノート     … 文書1件につき1枚。意欲（提案・アイデア）か、実行力（PJ）かは、文書の種類で決まる
+#   ・キャリアシートのノート … 本人の入力（文書を持たない）。「現在の職務」「将来やりたいこと」
+#                              「そのために取り組んでいること」の3項目、各1000字まで
 # ノートの本文は、文書の章の抜粋（短く切ったもの）。GPTの要約には差し替えられる（body_source）。
 # 看板の文章は、順位づけと、推薦文の補足にだけ使う。画面にも推薦理由にも出さない。
 #
@@ -12,7 +13,7 @@
 from collections import defaultdict
 
 NOTE_CHARS = 300        # ノート1枚の本文の長さの上限（文字）
-TEXT_MAX = 3000         # 看板の文章の長さの上限。DBの check（3000文字）に合わせる
+TEXT_MAX = 6000         # 看板の文章の長さの上限。DBの check（6000文字）に合わせる。キャリアシート3項目で最大3000字
 TAG_N = 5               # ノートに添えるタグの数
 TAG_MAX_DF = 0.05       # この割合より多くの文書に出る語は、タグにしない（「部門」「記録」など）
 
@@ -30,8 +31,16 @@ EXCLUDE_PJ_STATUS = ()   # 例：("計画中",)
 
 
 def clip(text, limit):
+    """limit 字までに切る。できるだけ文の区切り（。）で切り、文の途中で終わらせない。
+    区切りが前のほうにしかないとき（limit の半分より手前）は、文の途中で切って「…」を付ける"""
     text = " ".join(str(text).split())
-    return text if len(text) <= limit else text[:limit - 1] + "…"
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    cut = head.rfind("。")
+    if cut + 1 >= limit // 2:
+        return head[:cut + 1]
+    return head[:limit - 1] + "…"
 
 
 def note_body(sections, doc_type, limit=NOTE_CHARS):
@@ -82,8 +91,8 @@ def doc_tags(kws, common, n=TAG_N):
 
 def format_note(n):
     """看板の文章に並べる、ノート1枚分"""
-    head = (f"【{n['kind']}｜{n['label']}｜{n['role']}｜{n['date']}】" if n["kind"] != "カルテ"
-            else f"【カルテ｜{n['date']}】")
+    head = (f"【{n['kind']}｜{n['label']}｜{n['role']}｜{n['date']}】" if n["kind"] != "キャリアシート"
+            else f"【キャリアシート｜{n['label']}｜{n['date']}】")
     if n.get("title"):
         head += n["title"]
     lines = [head, n["body"]]
@@ -109,10 +118,10 @@ def build(docs, sections, authors, keywords, memos=None, emp_ids=None):
     sections  [{doc_id, section_no, section_role, body}]
     authors   [{doc_id, emp_id, role}]
     keywords  {doc_id: [(語, 回数), ...]}
-    memos     {emp_id: [{"body", "created_at"}, ...]}  カルテ（本人入力）
+    memos     {emp_id: [{"body", "memo_kind", "updated_at"}, ...]}  キャリアシート（本人入力）
     emp_ids   作る人を絞るときだけ（登録のたびの作り直し）
     戻り値    {emp_id: {"notes": [ノート], "text": 看板の文章, "used": 文章に使ったノートの数}}
-    ノート：{kind, label, date, role, title, body, tags, doc_id}（カルテは doc_id が None）"""
+    ノート：{kind, label, date, role, title, body, tags, doc_id}（キャリアシートは doc_id が None、label は項目名）"""
     memos = memos or {}
     by_doc = defaultdict(list)
     for s in sections:
@@ -136,7 +145,8 @@ def build(docs, sections, authors, keywords, memos=None, emp_ids=None):
         if emp_ids is not None and emp not in emp_ids:
             continue
         for m in items:
-            per_emp[emp].append({"kind": "カルテ", "label": "", "date": str(m["created_at"])[:10], "role": None,
+            per_emp[emp].append({"kind": "キャリアシート", "label": m.get("memo_kind") or "本人入力",
+                                 "date": str(m.get("updated_at") or m.get("created_at"))[:10], "role": None,
                                  "title": None, "body": clip(m["body"], 1000), "tags": [], "doc_id": None})
     out = {}
     for emp, notes in per_emp.items():
