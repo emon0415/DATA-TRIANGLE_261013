@@ -118,17 +118,77 @@ def build_messages(notes, query=None, full_texts=None):
     return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": "\n\n".join(lines)}]
 
 
-def generate(client, notes, query=None, full_texts=None, model=MODEL):
-    """紹介を書かせて、確かめた結果を返す。client は OpenAI（テストでは偽物）"""
+def generate(client, notes, query=None, full_texts=None, model=MODEL, judge_model=None, check=True):
+    """紹介を書かせて、確かめた結果を返す。client は OpenAI（テストでは偽物）
+    check=True のとき、書いた文が出典の本文に本当に書かれているかを、別の呼び出しで確かめる（judge）"""
     res = client.chat.completions.create(
         model=model, messages=build_messages(notes, query, full_texts),
         response_format={"type": "json_object"}, temperature=0.2)
     raw = res.choices[0].message.content
     usage = getattr(res, "usage", None)
     out = verify(raw, notes, has_query=bool(query), full_texts=full_texts)
+    tin, tout = getattr(usage, "prompt_tokens", 0) or 0, getattr(usage, "completion_tokens", 0) or 0
+    if check:
+        tin2, tout2 = judge(client, out, notes, full_texts, judge_model or model)
+        tin, tout = tin + tin2, tout + tout2
     out["model"] = model
-    out["tokens"] = {"in": getattr(usage, "prompt_tokens", None), "out": getattr(usage, "completion_tokens", None)}
+    out["tokens"] = {"in": tin, "out": tout}
     return out
+
+
+JUDGE_SYSTEM = """あなたは、紹介文の検査係です。「文」と「出典の本文」を渡します。
+文に書かれた主張が、出典の本文に書かれているかを、文ごとに判定してください。
+
+判定（verdict）：
+  "支持"   … 文の中のすべての主張（主語、数字、原因・理由、評価）が、出典の本文に書かれている
+  "一部"   … 一部は書かれているが、書かれていない主張も混ざっている
+  "不支持" … 書かれていない主張が中心にある
+
+厳しく判定すること：
+ ・もっともらしくても、本文に書かれていなければ「不支持」。推測、一般論、言い換えすぎ（本文にない関心・意図・理由）は「不支持」
+ ・「〜のため」「〜なので」の理由や、「関連する」「関係する」のつながりは、本文にそのつながりが書かれていなければ「不支持」
+ ・「精通」「得意」「成功」「優れた」などの評価は、本文に同じ評価が書かれていなければ「不支持」（事実として「目標を達成」と書かれていれば、それは「支持」）
+ ・出典がキャリアシートのときは、本人が書いた範囲まで。「本人は…と書いている」は「支持」になるが、事実として言い切った文は「不支持」
+
+JSONで返す：{"results": [{"i": 文の番号, "verdict": "支持|一部|不支持", "reason": "20字以内"}]}
+"""
+
+
+def judge(client, brief, notes, full_texts=None, model=MODEL):
+    """brief の文を、出典の本文と突き合わせる。「不支持」の文は捨て、「一部」の文には注記する（brief を直接書き換える）。
+    出典のない文（留意点など）と、決まった文（NO_MATCH）は、確かめない。確かめられなかったときは、文を残して、その旨を記録する。
+    戻り値：(入力トークン, 出力トークン)"""
+    by = {n["source"]: n for n in notes}
+    flat = [(sec, it) for sec in SECTIONS for it in brief["sections"][sec] if it["sources"] and it["text"] != NO_MATCH]
+    if not flat:
+        return 0, 0
+    blocks = []
+    for i, (sec, it) in enumerate(flat):
+        mats = []
+        for src in it["sources"]:
+            n = by[src]
+            mats.append(f"［{src}］{n['body']}" + (f"\n{full_texts[n['doc_id']]}" if full_texts and n["doc_id"] in full_texts else ""))
+        blocks.append(f"## {i}\n文：{it['text']}\n出典の本文：\n" + "\n".join(mats))
+    try:
+        res = client.chat.completions.create(
+            model=model, messages=[{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": "\n\n".join(blocks)}],
+            response_format={"type": "json_object"}, temperature=0)
+        verdicts = {int(r["i"]): r for r in json.loads(res.choices[0].message.content)["results"]}
+    except Exception as e:                     # 確かめられなかったとき：文は残し、記録する
+        brief["dropped"].append(f"文と出典の突き合わせができませんでした（{type(e).__name__}）。出典の有無しか確かめていません")
+        return 0, 0
+    drop = set()
+    for i, (sec, it) in enumerate(flat):
+        v = verdicts.get(i, {})
+        if v.get("verdict") == "不支持":
+            drop.add(id(it))
+            brief["dropped"].append(f"［{sec}］出典の本文に書かれていないため捨てました（{v.get('reason', '')}）：{it['text'][:30]}…")
+        elif v.get("verdict") == "一部":
+            it["text"] += "（※出典に一部しか書かれていない）"
+    for sec in SECTIONS:
+        brief["sections"][sec] = [it for it in brief["sections"][sec] if id(it) not in drop]
+    u = getattr(res, "usage", None)
+    return getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0
 
 
 # ---------- 確かめる（DB・OpenAIに触れない） ----------
