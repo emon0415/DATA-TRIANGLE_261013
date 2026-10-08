@@ -23,6 +23,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -139,7 +140,7 @@ def rank_kwargs(p):
 
 
 # ---------- 結果の表示 ----------
-def show_people(res, ctx, expect, top_n, w_profile=0.0):
+def show_people(res, ctx, expect, top_n, w_profile=0.0, query=None):
     cols = st.columns(2)
     for col, key, title in ((cols[0], "proven", "実績のある人（完了PJ・採択の提案）"),
                             (cols[1], "hidden", "隠れた杭（それ以外）")):
@@ -162,6 +163,8 @@ def show_people(res, ctx, expect, top_n, w_profile=0.0):
                         mark = " ○" if code in set(expect["expected_docs"]) else (
                             " ×負例" if code in set(expect["negative_docs"]) else "")
                     st.caption(f"{e['role']}｜{code}{mark}｜{ctx['doc_title'][e['doc']]}｜{e['score']:.4f}")
+                if query:
+                    brief_button(get_ctx()[0], p["emp"], query, [e["doc"] for e in p["evidence"]], "search")
 
 
 def evaluate(ctx, w_fts, kwargs, w_profile=0.0):
@@ -203,6 +206,14 @@ def show_evaluation(ctx, p):
 
 
 # ---------- 看板タブ（開発用） ----------
+@st.cache_data(show_spinner=False)
+def note_sims(texts, query):
+    """ノート1枚ずつの、質問文との類似度（コサイン）。看板全体の類似度と比べるための診断用。
+    ノートの枚数ぶんだけ埋め込みを作る（ごくわずかな課金。同じ組み合わせは使い回す）"""
+    from search import embed
+    vecs = embed.normalize(np.array(embed.embed_texts(list(texts)), dtype=np.float32))
+    return (vecs @ embed.embed_query(query)).tolist()
+
 def show_profiles(sb, ctx, query):
     """人を選んで、看板の文章・ノート・近い看板の人を確かめる。本番の画面には出さない"""
     ids = ctx["profile_ids"]
@@ -225,16 +236,23 @@ def show_profiles(sb, ctx, query):
     st.text_area("看板の文章（ノートを日付順に並べたもの）", ctx["profile_text"].get(emp, ""), height=260, disabled=True)
 
     rows = sb.table("profile_notes").select(
-        "doc_id,body,body_source,documents(doc_code,title,doc_type,result,pj_status)").eq("emp_id", emp).execute().data
+        "doc_id,body,body_source,memo_kind,updated_at,documents(doc_code,title,doc_type,result,pj_status)").eq("emp_id", emp).execute().data
     notes = []
     for r in rows:
         d = r.get("documents") or {}
         role = next((ro for e, ro in ctx["corpus"].authors.get(r["doc_id"], []) if e == emp), "") if r["doc_id"] else ""
-        kind = "カルテ" if not r["doc_id"] else ("実行力" if d.get("doc_type") == "project" else "意欲")
-        notes.append({"種類": kind, "文書番号（出典）": d.get("doc_code", ""), "表題": d.get("title", ""), "役割": role,
-                      "結果・状態": d.get("result") or d.get("pj_status") or "", "由来": r["body_source"], "本文": r["body"]})
+        kind = "キャリアシート" if not r["doc_id"] else ("実行力" if d.get("doc_type") == "project" else "意欲")
+        notes.append({"種類": kind, "文書番号（出典）": d.get("doc_code", ""), "表題": d.get("title", "") or (r.get("memo_kind") or ""),
+                      "役割": role, "結果・状態": d.get("result") or d.get("pj_status") or "",
+                      "由来": r["body_source"], "本文": r["body"]})
     st.caption(f"ノート {len(notes)}枚（出典は文書番号。推薦文の補足に使うときも、この番号を添えます）")
-    st.dataframe(pd.DataFrame(notes), hide_index=True)
+    note_df = pd.DataFrame(notes)
+    if query and notes:
+        sims_n = note_sims(tuple(f"{n['表題']}\n{n['本文']}" for n in notes), query)
+        note_df.insert(3, "質問文との近さ", [round(v, 3) for v in sims_n])
+    st.dataframe(note_df, hide_index=True)
+
+    show_brief(sb, emp, query, rows, note_df)
 
     idx = ids.index(emp)
     sims = ctx["profile_matrix"] @ ctx["profile_matrix"][idx]
@@ -251,6 +269,43 @@ def show_profiles(sb, ctx, query):
         st.write(f"質問文：{query}")
         st.write(f"この人の看板との類似度 {qs[emp]:.3f}（看板のある{len(order)}人中 {order.index(emp) + 1}位。"
                  f"全員の中央値 {sorted(qs.values())[len(qs) // 2]:.3f}、最高 {qs[order[0]]:.3f}）")
+        if notes:
+            best = max(note_df["質問文との近さ"])
+            st.write(f"この人のノート1枚ずつの類似度は、最大 {best:.3f}（上の表）。"
+                     + ("看板全体より高い＝複数の話題が混ざって、看板が薄まっている可能性があります。" if best > qs[emp] + 0.05
+                        else "看板全体とほぼ同じです。"))
+
+
+def brief_button(sb, emp, query, doc_ids, where):
+    """「この人についてもっと調べる」：ノートから、小型モデルに紹介を書かせる（押したときだけ呼ぶ）。
+    doc_ids：質問文に近い文書（章の全文を材料に足す）。検索の結果なら、根拠の文書"""
+    from search import embed, person_brief as pb
+    key = f"brief|{emp}|{query or ''}"
+    if st.button("この人についてもっと調べる", key=f"btn|{where}|{key}"):
+        with st.spinner("ノートを読んで書いています…"):
+            full = pb.fetch_sections(sb, list(doc_ids)[:pb.FULL_TEXT_DOCS])
+            st.session_state[key] = pb.generate(embed._client(), pb.gather(sb, emp), query=query, full_texts=full)
+    brief = st.session_state.get(key)
+    if brief:
+        st.markdown(pb.to_markdown(brief))
+        t = brief["tokens"]
+        st.caption(f"モデル：{brief['model']}／トークン 入力 {t['in']}・出力 {t['out']}")
+        if brief["dropped"]:
+            with st.expander(f"出典を確かめられず、捨てたもの（{len(brief['dropped'])}件）"):
+                for d in brief["dropped"]:
+                    st.write("・" + d)
+
+
+def show_brief(sb, emp, query, rows, note_df):
+    """看板タブ用（開発）。質問文に近いノートの文書を、材料に足す"""
+    st.subheader("この人についてもっと調べる")
+    st.caption("検索の順位には使わず、押したときだけ、この人のノートからAIが紹介を書きます。書いた事実には出典（文書番号）が付き、"
+               "出典の本文に書かれていない文は、プログラムで捨てています。検索タブの結果からも、同じ操作ができます。")
+    near = []
+    if query and "質問文との近さ" in note_df:
+        sims = note_df["質問文との近さ"].tolist()
+        near = [rows[i]["doc_id"] for i in sorted((i for i in range(len(rows)) if rows[i]["doc_id"]), key=lambda i: -sims[i])]
+    brief_button(sb, emp, query, near, "kanban")
 
 
 # ---------- 画面 ----------
@@ -289,7 +344,7 @@ def main():
                 scores, ctx["corpus"], searcher=p["searcher"], depts=p["depts"] or None, years=p["years"] or None,
                 top_n=p["top_n"], **rank_kwargs(p), **blend_kwargs(ctx, query, p["w_profile"]))
             st.caption(f"質問文：{query}")
-            show_people(res, ctx, SAMPLES.get(query), p["top_n"], p["w_profile"])
+            show_people(res, ctx, SAMPLES.get(query), p["top_n"], p["w_profile"], query)
         else:
             st.info("質問文を選んで「検索する」を押すと、結果が出ます。設定を動かすと、結果もすぐ変わります。")
 
