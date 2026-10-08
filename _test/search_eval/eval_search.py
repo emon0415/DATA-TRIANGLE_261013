@@ -68,6 +68,7 @@ def load(sb):
     authors = fetch_all(sb, "document_authors", "doc_id,emp_id,role", ["doc_id", "emp_id"])
     emps = fetch_all(sb, "employees", "emp_id,emp_no,name,dept_id,is_active", ["emp_id"])
     depts = fetch_all(sb, "departments", "dept_id,dept_name", ["dept_id"])
+    prof_rows, prof_ids, prof_matrix = retrieve.load_profiles(sb)
     corpus = rank.Corpus.from_rows(sections[["section_id", "doc_id"]].to_dict("records"),
                                    docs, authors, emps)
     return {
@@ -78,7 +79,17 @@ def load(sb):
         "emp_name": {e["emp_id"]: e["name"] for e in emps},
         "emp_id_of": {e["emp_no"]: e["emp_id"] for e in emps},
         "dept_name": {d["dept_id"]: d["dept_name"] for d in depts},
+        "profile_text": {r["emp_id"]: r["profile_text"] for r in prof_rows},
+        "profile_meta": {r["emp_id"]: {"generated_at": r["generated_at"], "embedded_at": r["embedded_at"]} for r in prof_rows},
+        "profile_ids": prof_ids, "profile_matrix": prof_matrix,
     }
+
+
+def profile_sims(ctx, text):
+    """質問文と、全員の看板の類似度 {社員ID: コサイン}。看板のベクトルがなければ None"""
+    if not ctx["profile_ids"]:
+        return None
+    return retrieve.profile_similarity(embed.embed_query(text), ctx["profile_ids"], ctx["profile_matrix"])
 
 
 def rankings(sb, ctx, text):
@@ -144,6 +155,28 @@ def show_detail(method, q, r, ctx):
         print(f"  {i}. {no:>6}  {ev['role']}  {ctx['doc_code'][ev['doc']]:<16}{mark}")
 
 
+ALPHAS = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.2, 0.0]
+
+
+def show_alpha_table(ctx, queries, hybrid):
+    """ハイブリッドの章の順位に、看板を混ぜる割合αを変えて、点数を比べる。
+    α＝1 は看板なし（上の「ハイブリッド」と同じ）、α＝0 は看板だけ"""
+    sims = {q["id"]: profile_sims(ctx, q["text"]) for q in queries}
+    print("\n=== 看板の混ぜ方（α）を変えたときの点数（ハイブリッドに看板を混ぜる。α＝1が看板なし） ===")
+    print(f"{'α':>5}{'人MRR':>8}{'人の再現率@5':>14}{'文書の再現率@10':>16}{'負例の混入@10':>14}")
+    firsts = {}
+    for a in ALPHAS:
+        rs = {q["id"]: score_query(hybrid[q["id"]], q, ctx, profile_sims=sims[q["id"]], alpha=a) for q in queries}
+        firsts[a] = rs
+        print(f"{a:>5.1f}{mean(r['rr'] for r in rs.values()):>8.3f}{mean(r['rec5'] for r in rs.values()):>14.3f}"
+              f"{mean(r['doc_rec'] for r in rs.values()):>16.3f}{sum(r['neg'] for r in rs.values()):>14d}")
+    print("\n問いごとの、正解の人が最初に出る順位（αごと）")
+    print(f"{'問い':<24}" + "".join(f"{a:>6.1f}" for a in ALPHAS))
+    for q in queries:
+        print(f"{q['id']:<24}" + "".join(f"{(str(firsts[a][q['id']]['first']) if firsts[a][q['id']]['first'] else '-'):>6}" for a in ALPHAS))
+    print("※ 問いは11問なので、1問の違いで点数は大きく動きます。点数だけで決めず、問いごとの順位も見てください。")
+
+
 def mean(xs):
     xs = [x for x in xs if x is not None]
     return sum(xs) / len(xs) if xs else float("nan")
@@ -160,11 +193,13 @@ def main():
     if models != [embed.MODEL]:
         print(f"注意：章のモデル（{models}）と、質問文のモデル（{embed.MODEL}）が一致していません。")
 
-    warnings, results = set(), {m: {} for m in METHODS}
+    warnings, results, hybrid = set(), {m: {} for m in METHODS}, {}
     for q in queries:
         for method, scores in section_scores(sb, ctx, q["text"], warnings).items():
             r = score_query(scores, q, ctx)
             results[method][q["id"]] = r
+            if method == "ハイブリッド(RRF)":
+                hybrid[q["id"]] = scores
             if detail == q["id"]:
                 show_detail(method, q, r, ctx)
     if detail and detail not in {q["id"] for q in queries}:
@@ -188,6 +223,11 @@ def main():
             r = results[m].get(q["id"])
             cells.append("-" if r is None else (str(r["first"]) if r["first"] else ""))
         print(f"{q['id']:<24}" + "".join(f"{c:>18}" for c in cells))
+
+    if hybrid and ctx["profile_ids"]:
+        show_alpha_table(ctx, queries, hybrid)
+    elif hybrid:
+        print("\n看板のベクトルがDBにありません（initial_load/build_profiles.py を実行すると、αの比較が出ます）。")
 
     if warnings:
         print("\n全文検索を呼べませんでした：")

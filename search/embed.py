@@ -37,8 +37,9 @@ def normalize(v):
     return v / np.where(n == 0, 1, n)
 
 
+@lru_cache(maxsize=256)
 def embed_query(text):
-    """質問文を1本のベクトルにする"""
+    """質問文を1本のベクトルにする（同じ質問文は使い回す。戻り値は書き換えないこと）"""
     res = _client().embeddings.create(model=MODEL, input=[text])
     return normalize(res.data[0].embedding)
 

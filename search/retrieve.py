@@ -79,3 +79,32 @@ def hybrid_scores(vector_ids, fts_ids, k=RRF_K, w_vector=1.0, w_fts=1.0):
     片方が空なら、もう片方だけの順位になる。比重は、2つの比率だけが効く（0.5と0.5は1と1と同じ）"""
     pairs = [(r, w) for r, w in ((vector_ids, w_vector), (fts_ids, w_fts)) if r]
     return rank.rrf([r for r, _ in pairs], k=k, weights=[w for _, w in pairs])
+
+
+# ---------- 看板 ----------
+def load_profiles(sb, page=500):
+    """看板（profiles）をDBから読む。戻り値：(行のリスト, 社員IDの並び, ベクトルの行列)。
+    行は {"emp_id", "profile_text", "generated_at", "embedded_at"}。ベクトルがある人だけが、並びと行列に入る"""
+    rows, start = [], 0
+    while True:
+        data = (sb.table("profiles").select("emp_id,profile_text,generated_at,embedded_at,embedding")
+                .order("emp_id").range(start, start + page - 1).execute().data)
+        rows += data
+        if len(data) < page:
+            break
+        start += page
+    ids, vecs = [], []
+    for r in rows:
+        e = r.pop("embedding")
+        if e is not None:
+            ids.append(r["emp_id"])
+            vecs.append(json.loads(e) if isinstance(e, str) else e)
+    matrix = normalize(np.array(vecs, dtype=np.float32)) if vecs else np.zeros((0, 1), dtype=np.float32)
+    return rows, ids, matrix
+
+
+def profile_similarity(qvec, ids, matrix):
+    """質問文のベクトルと、看板のベクトルの類似度（コサイン）。戻り値：{社員ID: 類似度}"""
+    if not ids:
+        return {}
+    return dict(zip(ids, (matrix @ qvec).tolist()))
