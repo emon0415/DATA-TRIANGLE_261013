@@ -37,26 +37,28 @@ def fetch_all(sb, table, cols, page=1000):
 
 
 def load_masters(sb):
-    """部署名→部署ID と 社員番号→社員 の辞書をDBから作る（読むだけ）"""
+    """部署名→部署ID と 社員番号→社員（emp_id、氏名）の辞書をDBから作る（読むだけ）"""
     depts = fetch_all(sb, "departments", "dept_id, dept_name")
-    emps = fetch_all(sb, "employees", "emp_no, name")
+    emps = fetch_all(sb, "employees", "emp_id, emp_no, name")
     return ({d["dept_name"]: d["dept_id"] for d in depts},
             {str(e["emp_no"]): e for e in emps})
 
 
-def existing_docs(sb, doc_ids):
-    """DBにすでにある文書を {文書ID: {"title": 表題, "source_file": ファイル名}} で返す（読むだけ）"""
-    doc_ids = sorted({d for d in doc_ids if d})
-    if not doc_ids:
+def existing_docs(sb, doc_codes):
+    """DBにすでにある文書を {文書番号: {"doc_id", "title", "source_file"}} で返す（読むだけ）"""
+    doc_codes = sorted({d for d in doc_codes if d})
+    if not doc_codes:
         return {}
-    res = (sb.table("documents").select("doc_id, title, source_file")
-           .in_("doc_id", doc_ids).execute())
-    return {r["doc_id"]: {"title": r["title"], "source_file": r["source_file"]} for r in res.data}
+    res = (sb.table("documents").select("doc_id, doc_code, title, source_file")
+           .in_("doc_code", doc_codes).execute())
+    return {r["doc_code"]: r for r in res.data}
 
 
 def save_document(sb, rows):
     """1文書分の行（word_to_rows.read_word の結果）をDBに書き込む。登録済みなら上書きする。
 
+    ・文書は文書番号（doc_code）で上書きする。doc_id はDBが振り、上書きしても変わらない。
+      振られた doc_id は、章と著者の行（rows の中）にも書き込む（このあとの埋め込みで使う）
     ・章は (doc_id, section_no) で上書きし、section_id を変えない。
       cluster_members が section_id を参照しているため、章を消して入れ直すことはしない
     ・上書きした章の埋め込みは空に戻す（本文が変わっているかもしれないため。あとで埋め込み直す）
@@ -66,7 +68,11 @@ def save_document(sb, rows):
     from search.tokenizer import index_text, keyword_counts
 
     doc = rows["documents"][0]
-    doc_id = doc["doc_id"]
+    # 文書 → 章 → 著者の順（章と著者は文書を参照しているため）
+    doc_id = sb.table("documents").upsert(doc, on_conflict="doc_code").execute().data[0]["doc_id"]
+    for r in rows["document_sections"] + rows["document_authors"]:
+        r["doc_id"] = doc_id
+
     sections = [{**s, "body_tokens": index_text(s["body"]),
                  "embedding": None, "embedding_model": None, "embedded_at": None}
                 for s in rows["document_sections"]]
@@ -75,15 +81,13 @@ def save_document(sb, rows):
     doc_text = "\n".join([doc["title"] or ""] + [s["body"] for s in sections])
     keywords = [{"doc_id": doc_id, "keyword": w, "count": n} for w, n in keyword_counts(doc_text)]
 
-    # 文書 → 章 → 著者の順（章と著者は文書を参照しているため）
-    sb.table("documents").upsert(doc, on_conflict="doc_id").execute()
     sb.table("document_sections").upsert(sections, on_conflict="doc_id,section_no").execute()
     removed_sections = (sb.table("document_sections").delete()
                         .eq("doc_id", doc_id).gt("section_no", len(sections)).execute().data)
-    sb.table("document_authors").upsert(authors, on_conflict="doc_id,emp_no").execute()
-    keep = [a["emp_no"] for a in authors]
+    sb.table("document_authors").upsert(authors, on_conflict="doc_id,emp_id").execute()
+    keep = [a["emp_id"] for a in authors]
     removed_authors = (sb.table("document_authors").delete()
-                       .eq("doc_id", doc_id).not_.in_("emp_no", keep).execute().data)
+                       .eq("doc_id", doc_id).not_.in_("emp_id", keep).execute().data)
     # キーワードは前の版の分を消して入れ直す（ほかの表から参照されていないため）
     sb.table("document_keywords").delete().eq("doc_id", doc_id).execute()
     if keywords:
