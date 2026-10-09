@@ -65,6 +65,29 @@ def doc_label(doc):
     return "アイデア投稿"
 
 
+# 文書の種類ごとの名札（画面の表示用）：(絵文字, 種類の名前, 一言の説明)
+DOC_KINDS = {
+    "proposal": ("📝", "改善提案", "現場から出された改善の提案です。結果の状態は、名札のかっこに出ます。"),
+    "project": ("🛠", "プロジェクト", "実際に動いたプロジェクトの記録です。"),
+    "idea": ("💡", "アイデア投稿", "現場の困りごとと、そのアイデアです。審査はされていません。"),
+}
+
+
+def doc_icon(doc):
+    return DOC_KINDS.get(doc["doc_type"], DOC_KINDS["idea"])[0]
+
+
+def doc_badge(doc):
+    """名札。例：📝 改善提案（採択）／🛠 プロジェクト（完了）／💡 アイデア投稿"""
+    icon, name, _ = DOC_KINDS.get(doc["doc_type"], DOC_KINDS["idea"])
+    state = {"proposal": doc.get("result"), "project": doc.get("pj_status")}.get(doc["doc_type"])
+    return f"{icon} {name}（{state}）" if state else f"{icon} {name}"
+
+
+def doc_kind_note(doc):
+    return DOC_KINDS.get(doc["doc_type"], DOC_KINDS["idea"])[2]
+
+
 def doc_date(doc):
     """並べ替えと表示に使う日付（YYYY-MM-DD）。提案・アイデアは提出日、PJは開始日"""
     return str(doc.get("submitted_at") or doc.get("started_at") or "")[:10]

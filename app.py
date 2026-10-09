@@ -29,7 +29,7 @@ html, body, [class*="css"] { font-family: 'Noto Sans JP', sans-serif; }
 """, unsafe_allow_html=True)
 
 # ---------- 画面の切り替え ----------
-page = st.sidebar.radio("画面", ["人を探す", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed")
+page = st.sidebar.radio("画面", ["人を探す", "仲間を探す", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed")
 
 # ========== 人を探す ==========
 @st.cache_resource(show_spinner="検索の準備をしています（初回だけ時間がかかります）")
@@ -40,23 +40,33 @@ def get_search():
     return sb, service.load(sb)
 
 
+@st.cache_resource(show_spinner="看板のベクトルを読んでいます")
+def get_vectors():
+    from search import similar
+    return similar.load_vectors(get_search()[0])
+
+
 @st.cache_data(show_spinner=False)
-def run_search(query, depts, year_range, role_levels, w_fts):
+def run_search(query, depts, year_range, role_levels, w_fts, vec_min, fts_min):
     from search import service
     sb, ctx = get_search()
-    return service.search(sb, ctx, query, dept_names=depts, year_range=year_range, role_levels=dict(role_levels), w_fts=w_fts)
+    return service.search(sb, ctx, query, dept_names=depts, year_range=year_range, role_levels=dict(role_levels), w_fts=w_fts,
+                          vec_min=vec_min, fts_min=fts_min)
 
 
 def reset_roles():
     from search import rank, service
     st.session_state["w_fts"] = service.DEFAULTS["w_fts"]
+    st.session_state["vec_min"] = service.DEFAULTS["vec_min"]
+    st.session_state["fts_min"] = service.DEFAULTS["fts_min"]
     for role, level in rank.DEFAULT_ROLE_LEVELS.items():
         st.session_state[f"role_{role}"] = level
 
 
 def render_document(detail, hit=None):
     """文書の中身を、章ごとのマークダウンで見せる。hit：今回の質問に当たった章の情報（evidence の1件）。当たった章に印を付ける"""
-    st.markdown(f"**{detail['code']}**／{detail['label']}／{detail['date']}")
+    st.markdown(f"**{detail['badge']}**　{detail['code']}／{detail['date']}")
+    st.caption(detail["kind_note"])
     st.caption("書いた人：" + "、".join(f"{n}（{no}／{role}）" for n, no, role in detail["authors"]))
     for sec in detail["sections"]:
         is_hit = bool(hit) and sec["section_id"] == hit["section"]
@@ -114,6 +124,14 @@ if page == "人を探す":
                           help="0＝ベクトル検索（意味の近さ）だけ／1＝全文検索（言葉の一致）だけ。"
                                "章の点数を、この比率で足し合わせます。")
         st.caption(f"ベクトル {round((1 - w_fts) * 100)}％　／　全文 {round(w_fts * 100)}％")
+        st.session_state.setdefault("vec_min", service.DEFAULTS["vec_min"])
+        st.session_state.setdefault("fts_min", service.DEFAULTS["fts_min"])
+        vec_min = st.slider("ベクトルの足切り（質問との類似度）", 0.0, 1.0, step=0.01, key="vec_min",
+                            help="質問と章のコサイン類似度がこの値より低い章には、ベクトルの点を付けません。"
+                                 "上げるほど、意味が本当に近い章だけが残ります")
+        fts_min = st.slider("全文の足切り（全文スコア）", 0.0, 20.0, step=0.5, key="fts_min",
+                            help="全文検索のスコアがこの値より低い章には、全文の点を付けません。0なら、言葉が当たった章は全部残ります。"
+                                 "「内訳」に出る全文スコアを見て、決めてください")
         with st.expander("役割の重み（探し方の調整）", expanded=True):
             from search import service
             cat = service.role_catalog(ctx)
@@ -148,10 +166,14 @@ if page == "人を探す":
     query = st.session_state.get("query")
     if query:
         from search import service
-        res = run_search(query, tuple(depts), None if years == (2016, 2026) else years, tuple(levels.items()), w_fts)
+        res = run_search(query, tuple(depts), None if years == (2016, 2026) else years, tuple(levels.items()), w_fts, vec_min, fts_min)
         if res["warning"]:
             st.warning("全文検索を呼べなかったため、意味の近さだけで探しています。")
         st.caption(f"相談したいこと：{query}")
+        if res["none"]:
+            st.info("社内に、この相談に合うナレッジは見つかりませんでした。"
+                    f"（足切り：ベクトル {vec_min:.2f}／全文 {fts_min:g}。下げると、弱い当たりも出ます）")
+            st.stop()
         if not res["fts_used"] and not res["warning"]:
             st.caption("※全文検索で当たる章がなかったため、ベクトルだけで点数を付けています。")
         st.markdown('<div class="legend">点数の見方：<span class="v">■ベクトル</span>（意味の近さ）と '
@@ -162,6 +184,8 @@ if page == "人を探す":
             name, no, dept = service.person_line(ctx, p["emp"])
             st.markdown(f'<div class="person {kind}"><h4>{name}</h4>'
                         f'<div class="dept">{dept}／社員番号 {no}</div></div>', unsafe_allow_html=True)
+            st.caption({"高": "信頼度：高（意味も言葉も合う）", "意味": "信頼度：中（意味が近い。言葉は一致しない）",
+                        "言葉": "信頼度：中（言葉が一致。意味の近さは足切り未満）"}[p["confidence"]])
             pv, pf = p["parts"]["vector"], p["parts"]["fts"]
             share = pv / (pv + pf) * 100 if (pv + pf) else 0
             st.markdown(f'<div class="score">合計 <b>{p["score"]:.4f}</b> ＝ <span class="v">ベクトル {pv:.4f}</span>'
@@ -171,18 +195,21 @@ if page == "人を探す":
             for e in p["evidence"]:
                 code, title, label, role = service.doc_line(ctx, e)
                 c1, c2 = st.columns([5, 1])
-                c1.markdown(f"📄 {title}　{code}／{label}／{role}")
+                c1.markdown(f"{service.doc_icon(ctx, e['doc'])} {title}　{code}／{label}／{role}")
                 if c2.button("中身を見る", key=f"ev|{p['emp']}|{e['doc']}"):
                     open_document(e["doc"], hit=e)
             with st.expander("点数の内訳"):
                 st.caption(f"人の点数 ＝ 最上位の文書の点 ＋ {res['beta']}（経験の厚み）× 2番目の文書の点。"
                            "文書の点 ＝ 章の点 × 役割の重み。章の点 ＝ ベクトルの点 ＋ 全文の点（それぞれ、比率 × 1/(60＋順位)）")
                 rk = lambda r: f"{r}位" if r else "圏外（上位100に入らず）"
+                gate = lambda ok, r: "" if (ok or not r) else "（足切りで点なし）"
                 for e in p["evidence"]:
                     code, title, _label, role = service.doc_line(ctx, e)
                     st.markdown(f"**{code}**　{title}（{role}）　{'人の点数に入る' if e['counted'] else '参考（点数には入らない）'}")
-                    st.markdown(f"- <span class='v'>ベクトル</span>：{rk(e['vec_rank'])} → {e['vec_part']:.4f}"
-                                f"　／　<span class='f'>全文</span>：{rk(e['fts_rank'])} → {e['fts_part']:.4f}"
+                    vc = f"類似度 {e['vec_cos']:.2f}／" if e["vec_cos"] is not None else ""
+                    fs = f"全文スコア {e['fts_score']:g}／" if e["fts_score"] is not None else ""
+                    st.markdown(f"- <span class='v'>ベクトル</span>：{vc}{rk(e['vec_rank'])} → {e['vec_part']:.4f}{gate(e['vec_ok'], e['vec_rank'])}"
+                                f"　／　<span class='f'>全文</span>：{fs}{rk(e['fts_rank'])} → {e['fts_part']:.4f}{gate(e['fts_ok'], e['fts_rank'])}"
                                 f"　／　章の点 {e['section_score']:.4f} × 役割の重み {e['role_weight']:.2f} ＝ 文書の点 {e['score']:.4f}",
                                 unsafe_allow_html=True)
             k = service.person_knowledge(ctx, p["emp"], hit_docs=[e["doc"] for e in p["evidence"]])
@@ -190,15 +217,15 @@ if page == "人を探す":
                 hits = {e["doc"]: e for e in p["evidence"]}
                 for d in k["docs"]:
                     c1, c2 = st.columns([5, 1])
-                    c1.markdown(f"{'★ ' if d['hit'] else ''}📄 {d['title']}　{d['code']}／{d['label']}／{d['role']}／{d['date']}")
+                    c1.markdown(f"{'★ ' if d['hit'] else ''}{d['icon']} {d['title']}　{d['code']}／{d['label']}／{d['role']}／{d['date']}")
                     if c2.button("中身を見る", key=f"kn|{p['emp']}|{d['doc_id']}"):
                         open_document(d["doc_id"], hit=hits.get(d["doc_id"]))
                 st.markdown("キャリアシート：" + ("、".join(k["career"]) if k["career"] else "なし"))
                 st.caption("★は、今回の相談に当たった文書です。")
             show_brief(p["emp"], query, [e["doc"] for e in p["evidence"]])
 
-        groups = [("実績のある人", "完了したPJや採択された提案で関わった人", "proven", "track"),
-                  ("隠れた杭", "不採択・保留・審査中の提案などから見つかった人", "hidden", "hidden")]
+        groups = [("実績のある人", "完了したPJ、採択された提案で、実際に成果を出した人", "proven", "track"),
+                  ("原石の人", "不採択・保留・審査中の提案や、アイデア投稿で、同じ課題に取り組んでいた人", "hidden", "hidden")]
         cols = st.columns(len(groups))
         for col, (label, desc, frame, kind) in zip(cols, groups):
             with col:
@@ -211,6 +238,91 @@ if page == "人を探す":
                     st.write("該当する人がいません。部署や年の条件を外すと、表示されることがあります。")
     else:
         st.info("相談したいことを書いて「人を探す」を押してください。")
+
+# ========== 仲間を探す ==========
+elif page == "仲間を探す":
+    from search import service, similar
+
+    try:
+        sb, ctx = get_search()
+        ids, matrix = get_vectors()
+    except Exception as e:
+        st.error(f"準備ができませんでした：{e}")
+        st.stop()
+    D = similar.DEFAULTS
+    st.sidebar.markdown("### 仲間の探し方")
+    min_sim = st.sidebar.slider("足切り（調整後の点の最低ライン）", 0.0, 1.0, D["min_sim"], 0.01,
+                                help="部署の係数や加点を掛けたあとの点が、この値より低い人は出しません。誰も残らないときは「おすすめなし」と出します")
+    top_n = st.sidebar.slider("出す人数の上限", 1, 20, D["top_n"], 1)
+    same_dept = st.sidebar.select_slider("同じ部署の人の点数", options=similar.SAME_DEPT_STEPS, value=D["same_dept"],
+                                         format_func=lambda x: "そのまま" if x == 1.0 else f"×{x}",
+                                         help="同じ部署の人の点に掛ける係数。小さいほど、別の部署の人が上に来ます")
+    boost = st.sidebar.slider("重なりの少ない人への加点", 0.0, 2.0, D["overlap_boost"], 0.1,
+                              help="同じ文書に関わっていない人ほど、点数を上げます。0で加点なし")
+    dist = similar.distribution(ids, matrix)
+    if dist:
+        st.sidebar.caption("参考：全社の2人組の近さ　" + "／".join(f"上位{round(100 - p, 1):g}% = {v:.2f}" for p, v in dist.items() if p >= 90))
+
+    st.title("仲間を探す")
+    st.markdown('<p class="lead">社員番号を入れると、看板が近い人（考え方や関心が似ている人）が見つかります。</p>', unsafe_allow_html=True)
+    no = st.text_input("社員番号").strip()
+    emp = next((e for e, v in ctx["emps"].items() if v["emp_no"] == no), None) if no else None
+    if no and emp is None:
+        st.warning("その社員番号は見つかりません。")
+    if emp:
+        name, _, dept = service.person_line(ctx, emp)
+        st.subheader(f"{name}（{dept}）")
+        mk = service.person_knowledge(ctx, emp)
+        with st.expander(f"この人のナレッジ（文書 {len(mk['docs'])}件／キャリアシート {len(mk['career'])}項目）"):
+            for d in mk["docs"]:
+                c1, c2 = st.columns([5, 1])
+                c1.markdown(f"{d['icon']} {d['title']}　{d['code']}／{d['label']}／{d['role']}／{d['date']}")
+                if c2.button("中身を見る", key=f"mykn|{emp}|{d['doc_id']}"):
+                    open_document(d["doc_id"])
+            from search import person_brief as pb
+            sheets = [n for n in pb.gather(sb, emp) if n["kind"] == pb.CAREER]
+            if sheets:
+                st.markdown("**キャリアシート**（本人が書いた項目）")
+                for n in sheets:
+                    st.markdown(f"**{n['label']}**")
+                    st.caption(n["body"])
+            elif not mk["docs"]:
+                st.write("この人のナレッジは、まだありません。")
+        res = similar.find_similar(emp, ids, matrix, ctx["emps"], ctx["person_docs"], min_sim=min_sim, top_n=top_n,
+                                   same_dept=same_dept, overlap_boost=boost)
+        if res["status"] == "no_profile":
+            st.info("この人の看板がまだないため、仲間を探せません（文書もキャリアシートもない人は、看板ができません）。")
+        elif res["status"] == "none":
+            st.info(f"近い人は見つかりませんでした。足切り {min_sim:.2f} を通る人がいません（候補 {res['candidates']}人）。"
+                    "足切りを下げると、候補が出ることがあります。")
+        else:
+            st.caption(f"足切りを通った人：{res['passed']}人のうち、上位{len(res['people'])}人を表示")
+            texts = {r["emp_id"]: r["profile_text"] for r in sb.table("profiles").select("emp_id,profile_text")
+                     .in_("emp_id", [emp] + [p["emp"] for p in res["people"]]).execute().data}
+            for p in res["people"]:
+                n2, no2, d2 = service.person_line(ctx, p["emp"])
+                st.markdown(f'<div class="person track"><h4>{n2}</h4><div class="dept">{d2}／社員番号 {ctx["emps"][p["emp"]]["emp_no"]}</div></div>',
+                            unsafe_allow_html=True)
+                st.markdown(f'<div class="score">調整後 <b>{p["score"]:.3f}</b> ＝ 近さ <span class="v">{p["sim"]:.3f}</span>'
+                            f'{"　× 同じ部署 " + str(same_dept) if p["same_dept"] and same_dept != 1.0 else ""}'
+                            f'{"　× 重なりの少なさ加点" if boost else ""}</div>', unsafe_allow_html=True)
+                tags = ["同じ部署" if p["same_dept"] else "別の部署", f"関わった文書の重なり {p['overlap'] * 100:.0f}%"]
+                words = similar.shared_terms(texts.get(emp, ""), texts.get(p["emp"], ""))
+                if words:
+                    tags.append("共通する語：" + "、".join(words))
+                st.caption("　｜　".join(tags))
+                mine = {d for d, _ in ctx["person_docs"].get(emp, [])}
+                k = service.person_knowledge(ctx, p["emp"], hit_docs=mine)
+                with st.expander(f"紐づくナレッジ（文書 {len(k['docs'])}件／キャリアシート {len(k['career'])}項目）"):
+                    for d in k["docs"]:
+                        c1, c2 = st.columns([5, 1])
+                        c1.markdown(f"{'★ ' if d['hit'] else ''}{d['icon']} {d['title']}　{d['code']}／{d['label']}／{d['role']}／{d['date']}")
+                        if c2.button("中身を見る", key=f"simkn|{p['emp']}|{d['doc_id']}"):
+                            open_document(d["doc_id"])
+                    st.markdown("キャリアシート：" + ("、".join(k["career"]) if k["career"] else "なし"))
+                    st.caption("★は、選んだ人も関わっている文書です。")
+                show_brief(p["emp"], "", [d["doc_id"] for d in k["docs"]], where="sim")
+                st.divider()
 
 # ========== 個人看板（開発用） ==========
 elif page == "個人看板を検索（開発用）":

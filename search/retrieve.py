@@ -65,13 +65,18 @@ FTS_N = 100   # 各順位から取る章の数（仮置き）
 RRF_K = 60    # RRFの定数（仮置き）
 
 
-def fulltext_search(sb, query, n=FTS_N):
-    """質問文から語を取り出し、PGroongaで章を検索する。戻り値：[章ID]（スコアの高い順）"""
+def fulltext_search_scored(sb, query, n=FTS_N):
+    """質問文から語を取り出し、PGroongaで章を検索する。戻り値：[(章ID, 全文スコア)]（スコアの高い順）"""
     q = tokenizer.query_text(query)
     if not q:                      # 名詞が取れない質問文は、全文側は空にする
         return []
     rows = sb.rpc("search_sections_fts", {"q": q, "n": n}).execute().data
-    return [r["section_id"] for r in rows]
+    return [(r["section_id"], float(r.get("score") or 0.0)) for r in rows]
+
+
+def fulltext_search(sb, query, n=FTS_N):
+    """戻り値：[章ID]（スコアの高い順）"""
+    return [sid for sid, _ in fulltext_search_scored(sb, query, n)]
 
 
 def hybrid_scores(vector_ids, fts_ids, k=RRF_K, w_vector=1.0, w_fts=1.0):

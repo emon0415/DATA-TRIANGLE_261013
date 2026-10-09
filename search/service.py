@@ -11,7 +11,7 @@
 # =============================================================
 from search import embed, profiles as P, rank, retrieve
 
-DEFAULTS = {"w_fts": 0.5, "beta": 0.3, "top_n": 5}
+DEFAULTS = {"w_fts": 0.5, "beta": 0.3, "top_n": 5, "vec_min": 0.30, "fts_min": 0.0}
 
 
 def _fetch_all(sb, table, cols, order, page=1000):
@@ -56,12 +56,16 @@ def load(sb):
     }
 
 
-def search(sb, ctx, query, dept_names=(), year_range=None, top_n=DEFAULTS["top_n"], role_levels=None, w_fts=None):
+def search(sb, ctx, query, dept_names=(), year_range=None, top_n=DEFAULTS["top_n"], role_levels=None, w_fts=None,
+           vec_min=None, fts_min=None):
     """質問文から、人を探す。
     dept_names: 絞り込みの部署名（人の今の所属で絞る）。空ならすべて
     year_range: (最初の年, 最後の年)。文書の日付の年で絞る。None なら絞らない
     role_levels: 役割ごとの重みの段階 {役割: "重視"|"ふつう"|"あまり考慮しない"}。None なら既定（rank.DEFAULT_ROLE_LEVELS）
     w_fts: 全文検索の比重（0〜1）。0＝ベクトルのみ／1＝全文のみ。None なら既定
+    vec_min: ベクトルの足切り。質問と章のコサイン類似度がこれ未満なら、その章のベクトルの点は付けない
+    fts_min: 全文の足切り。全文スコア（PGroonga）がこれ未満なら、その章の全文の点は付けない
+      どちらの点も付かない章は、点数に入らない。誰も残らなければ res["none"]=True（「該当なし」と出す）
     戻り値: {"proven": [人], "hidden": [人], "warning": ..., "weights": {"vector", "fts"}, "fts_used": bool, "beta": β}
     人 = {"emp", "dept_id", "score", "frame", "evidence": [...], "parts": {"vector", "fts"}}
       evidence の各要素に、章の順位と点数の内訳（vec_rank, fts_rank, vec_part, fts_part, role_weight, counted）を足してある
@@ -71,16 +75,23 @@ def search(sb, ctx, query, dept_names=(), year_range=None, top_n=DEFAULTS["top_n
       人の点数 ＝ 最上位の文書の貢献 ＋ β × 2番目の文書の貢献      文書の貢献 ＝ 章の点数 × 役割の重み（× 新しさ）
       この式は章の点数について線形なので、人の点数も「ベクトル分 ＋ 全文分」にきれいに分けられる（合計は元の点数と一致する）"""
     w = DEFAULTS["w_fts"] if w_fts is None else w_fts
+    vec_min = DEFAULTS["vec_min"] if vec_min is None else vec_min
+    fts_min = DEFAULTS["fts_min"] if fts_min is None else fts_min
     qvec = embed.embed_query(query)
-    vec = retrieve.vector_search(qvec, ctx["sections"], ctx["matrix"], k=retrieve.FTS_N)["section_id"].tolist()
+    vdf = retrieve.vector_search(qvec, ctx["sections"], ctx["matrix"], k=retrieve.FTS_N)
+    vec = vdf["section_id"].tolist()
+    vec_cos = dict(zip(vdf["section_id"], vdf["score"]))        # 質問と章のコサイン類似度（足切りに使う）
     warning = None
     try:
-        fts = retrieve.fulltext_search(sb, query, n=retrieve.FTS_N)
+        pairs = retrieve.fulltext_search_scored(sb, query, n=retrieve.FTS_N)
     except Exception as e:                      # 全文検索の関数がない、など。ベクトルだけで探す
-        fts, warning = None, str(e)[:300]
+        pairs, warning = None, str(e)[:300]
+    fts = [sid for sid, _ in pairs] if pairs else None
+    fts_score = dict(pairs) if pairs else {}
     fts_used = bool(fts)                        # 全文で当たる章がなければ、ベクトルだけになる
     wv, wf = (1 - w, w) if fts_used else (1.0, 0.0)
-    rv, rf = rank.rrf([vec]), (rank.rrf([fts]) if fts_used else {})
+    rv = {sid: r for sid, r in rank.rrf([vec]).items() if vec_cos[sid] >= vec_min}            # 足切りを通ったものだけ点が付く
+    rf = {sid: r for sid, r in rank.rrf([fts]).items() if fts_score[sid] >= fts_min} if fts_used else {}
     scores = {sid: wv * rv.get(sid, 0.0) + wf * rf.get(sid, 0.0) for sid in set(rv) | set(rf)}
     depts = {ctx["dept_id_of"][n] for n in dept_names if n in ctx["dept_id_of"]} or None
     years = set(range(year_range[0], year_range[1] + 1)) if year_range else None
@@ -97,13 +108,17 @@ def search(sb, ctx, query, dept_names=(), year_range=None, top_n=DEFAULTS["top_n
                 vp, fp = wv * rv.get(sid, 0.0), wf * rf.get(sid, 0.0)
                 total = vp + fp
                 e.update({"vec_rank": vec_rank.get(sid), "fts_rank": fts_rank.get(sid), "vec_part": vp, "fts_part": fp,
+                          "vec_cos": float(vec_cos[sid]) if sid in vec_cos else None, "fts_score": fts_score.get(sid),
+                          "vec_ok": sid in rv, "fts_ok": sid in rf,
                           "section_score": total, "role_weight": (e["score"] / total) if total else 0.0, "counted": i < 2})
                 if i < 2 and total:                 # 人の点数に入るのは、上位2つの文書だけ（2番目は β 倍）
                     k = 1.0 if i == 0 else beta
                     pv += e["score"] * vp / total * k
                     pf += e["score"] * fp / total * k
             p["parts"] = {"vector": pv, "fts": pf}
-    res.update({"warning": warning, "weights": {"vector": wv, "fts": wf}, "fts_used": fts_used, "beta": beta})
+            top = p["evidence"][0]                  # 信頼度：一番点の高い文書の章で決める
+            p["confidence"] = "高" if (top["vec_ok"] and top["fts_ok"]) else ("意味" if top["vec_ok"] else "言葉")
+    res.update({"none": not (res["proven"] or res["hidden"]), "vec_min": vec_min, "fts_min": fts_min, "warning": warning, "weights": {"vector": wv, "fts": wf}, "fts_used": fts_used, "beta": beta})
     return res
 
 
@@ -111,6 +126,11 @@ def doc_line(ctx, evidence):
     """根拠の文書1件の表示用。戻り値：(文書番号, 表題, 種類と状態, この人の役割)"""
     d = ctx["docs"][evidence["doc"]]
     return d["doc_code"], d["title"], P.doc_label(d), evidence["role"]
+
+
+def doc_icon(ctx, doc_id):
+    """文書の種類の絵文字（一覧の行頭に付ける）"""
+    return P.doc_icon(ctx["docs"][doc_id])
 
 
 def person_line(ctx, emp):
@@ -134,7 +154,7 @@ def person_knowledge(ctx, emp, hit_docs=()):
     for doc_id, role in person_docs.get(emp, []):
         d = ctx["docs"].get(doc_id)
         if d:
-            items.append({"doc_id": doc_id, "code": d["doc_code"], "title": d["title"], "label": P.doc_label(d), "role": role,
+            items.append({"doc_id": doc_id, "code": d["doc_code"], "title": d["title"], "label": P.doc_label(d), "icon": P.doc_icon(d), "role": role,
                           "date": P.doc_date(d), "hit": doc_id in set(hit_docs)})
     items.sort(key=lambda x: x["date"], reverse=True)
     return {"docs": items, "career": ctx.get("career", {}).get(emp, [])}
@@ -167,6 +187,7 @@ def document_detail(sb, ctx, doc_id):
             .eq("doc_id", doc_id).order("section_no").execute().data)
     authors = [(ctx["emps"][e]["name"], ctx["emps"][e]["emp_no"], role)
                for e, role in ctx["corpus"].authors.get(doc_id, []) if e in ctx["emps"]]
-    return {"code": d["doc_code"], "title": d["title"], "label": P.doc_label(d), "date": P.doc_date(d), "authors": authors,
+    return {"code": d["doc_code"], "title": d["title"], "label": P.doc_label(d), "badge": P.doc_badge(d),
+            "kind_note": P.doc_kind_note(d), "date": P.doc_date(d), "authors": authors,
             "sections": [{"section_id": r["section_id"], "section_no": r["section_no"], "name": r["section_name"],
                           "role": r["section_role"], "body": r["body"]} for r in rows]}
