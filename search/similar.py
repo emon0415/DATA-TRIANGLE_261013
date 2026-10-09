@@ -52,7 +52,7 @@ def find_similar(emp, ids, matrix, emps, person_docs, min_sim=DEFAULTS["min_sim"
     """emp（社員ID）に近い人を返す。
     emps: {社員ID: {"dept_id", "is_active", ...}}／person_docs: {社員ID: [(文書ID, 役割)]}
     足切りは、係数を掛けたあとの点（調整後）に掛ける
-    戻り値：{"status": "ok"|"no_profile"|"none", "people": [{"emp", "sim", "score", "same_dept", "overlap"}],
+    戻り値：{"status": "ok"|"no_profile"|"none", "people": [{"emp", "sim", "score", "same_dept", "overlap", "shared"（共通の文書の件数）}],
              "candidates": 足切りの前の人数, "passed": 足切りを通った人数}"""
     if emp not in ids:
         return {"status": "no_profile", "people": [], "candidates": 0, "passed": 0}
@@ -64,10 +64,12 @@ def find_similar(emp, ids, matrix, emps, person_docs, min_sim=DEFAULTS["min_sim"
         if other == emp or not emps.get(other, {}).get("is_active", True):
             continue
         same = emps[other]["dept_id"] == mine["dept_id"]
-        ov = overlap(mine_docs, [d for d, _ in person_docs.get(other, [])])
+        other_docs = [d for d, _ in person_docs.get(other, [])]
+        ov = overlap(mine_docs, other_docs)
         sim = float(sims[i])
         score = sim * (same_dept if same else 1.0) * (1 + overlap_boost * (1 - ov))
-        rows.append({"emp": other, "sim": sim, "score": score, "same_dept": same, "overlap": ov})
+        rows.append({"emp": other, "sim": sim, "score": score, "same_dept": same, "overlap": ov,
+                     "shared": len(set(mine_docs) & set(other_docs))})
     passed = [r for r in rows if r["score"] >= min_sim]
     passed.sort(key=lambda r: -r["score"])
     return {"status": "ok" if passed else "none", "people": passed[:top_n], "candidates": len(rows), "passed": len(passed)}

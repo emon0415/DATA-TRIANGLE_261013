@@ -51,6 +51,7 @@ def main():
     p2 = next(p for p in r["people"] if p["emp"] == 2)
     p3 = next(p for p in r["people"] if p["emp"] == 3)
     check(abs(p2["overlap"] - 1 / 3) < 1e-9 and p3["overlap"] == 0, "重なり：1/3（和集合3件のうち共通は100だけ）と0")
+    check(p2["shared"] == 1 and p3["shared"] == 0, "共通の文書の件数：1件と0件")
     check(abs(p3["score"] - p3["sim"] * 2) < 1e-6, "重なりが0の人は、加点の分だけ点が上がる（1＋1.0×1）")
     check(abs(p2["score"] - p2["sim"] * (1 + 2 / 3)) < 1e-6, "重なりのある人の加点は小さい")
 

@@ -25,6 +25,7 @@ html, body, [class*="css"] { font-family: 'Noto Sans JP', sans-serif; }
 .bar .v { background: #3E5C76; }
 .bar .f { background: #C9962B; }
 .legend { color: #55636E; font-size: .88rem; }
+.ends { display: flex; justify-content: space-between; color: #55636E; font-size: .8rem; margin: -.6rem 0 .6rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,6 +53,11 @@ def run_search(query, depts, year_range, role_levels, w_fts, vec_min, fts_min):
     sb, ctx = get_search()
     return service.search(sb, ctx, query, dept_names=depts, year_range=year_range, role_levels=dict(role_levels), w_fts=w_fts,
                           vec_min=vec_min, fts_min=fts_min)
+
+
+def ends(left, right, where=st):
+    """バーの下に、左端と右端の意味を出す（どちらに動かすと何が起きるかを分かりやすくする）"""
+    where.markdown(f'<div class="ends"><span>← {left}</span><span>{right} →</span></div>', unsafe_allow_html=True)
 
 
 def reset_roles():
@@ -121,17 +127,20 @@ if page == "人を探す":
         from search import rank, service
         st.session_state.setdefault("w_fts", service.DEFAULTS["w_fts"])
         w_fts = st.slider("ベクトル ⇄ 全文の比率", 0.0, 1.0, step=0.05, key="w_fts",
-                          help="0＝ベクトル検索（意味の近さ）だけ／1＝全文検索（言葉の一致）だけ。"
-                               "章の点数を、この比率で足し合わせます。")
+                          help="右に動かすと、言葉が一致する章を重く見ます。左に動かすと、意味が近い章を重く見ます。"
+                               "真ん中は、両方を同じ重さで見ます。")
+        ends("ベクトル重視", "全文重視")
         st.caption(f"ベクトル {round((1 - w_fts) * 100)}％　／　全文 {round(w_fts * 100)}％")
         st.session_state.setdefault("vec_min", service.DEFAULTS["vec_min"])
         st.session_state.setdefault("fts_min", service.DEFAULTS["fts_min"])
         vec_min = st.slider("ベクトルの足切り（質問との類似度）", 0.0, 1.0, step=0.01, key="vec_min",
-                            help="質問と章のコサイン類似度がこの値より低い章には、ベクトルの点を付けません。"
-                                 "上げるほど、意味が本当に近い章だけが残ります")
+                            help="右に動かすと、質問にかなり近い章だけが残ります。左に動かすと、弱い当たりも残ります。"
+                                 "（質問と章のコサイン類似度が、この値より低い章には、ベクトルの点を付けません）")
+        ends("ゆるい", "厳しい")
         fts_min = st.slider("全文の足切り（全文スコア）", 0.0, 20.0, step=0.5, key="fts_min",
-                            help="全文検索のスコアがこの値より低い章には、全文の点を付けません。0なら、言葉が当たった章は全部残ります。"
+                            help="右に動かすと、質問の言葉が多く当たった章だけが残ります。左に動かすと、1語でも当たった章が残ります。"
                                  "「内訳」に出る全文スコアを見て、決めてください")
+        ends("ゆるい", "厳しい")
         with st.expander("役割の重み（探し方の調整）", expanded=True):
             from search import service
             cat = service.role_catalog(ctx)
@@ -252,13 +261,21 @@ elif page == "仲間を探す":
     D = similar.DEFAULTS
     st.sidebar.markdown("### 仲間の探し方")
     min_sim = st.sidebar.slider("足切り（調整後の点の最低ライン）", 0.0, 1.0, D["min_sim"], 0.01,
-                                help="部署の係数や加点を掛けたあとの点が、この値より低い人は出しません。誰も残らないときは「おすすめなし」と出します")
-    top_n = st.sidebar.slider("出す人数の上限", 1, 20, D["top_n"], 1)
+                                help="右に動かすと、看板がかなり近い人だけが残ります。左に動かすと、少し近い人も出ます。"
+                                     "（部署の係数や加点を掛けたあとの点が、この値より低い人は出しません。誰も残らないときは「おすすめなし」と出します）")
+    ends("ゆるい", "厳しい", st.sidebar)
+    top_n = st.sidebar.slider("出す人数の上限", 1, 20, D["top_n"], 1,
+                              help="右に動かすと、候補を多く出します。足切りを通った人が上限より少なければ、全員が出ます。")
+    ends("少なく", "多く", st.sidebar)
     same_dept = st.sidebar.select_slider("同じ部署の人の点数", options=similar.SAME_DEPT_STEPS, value=D["same_dept"],
                                          format_func=lambda x: "そのまま" if x == 1.0 else f"×{x}",
-                                         help="同じ部署の人の点に掛ける係数。小さいほど、別の部署の人が上に来ます")
-    boost = st.sidebar.slider("重なりの少ない人への加点", 0.0, 2.0, D["overlap_boost"], 0.1,
-                              help="同じ文書に関わっていない人ほど、点数を上げます。0で加点なし")
+                                         help="右に動かすと、同じ部署の人の点が下がり、別の部署の人が上に来ます。"
+                                              "左（そのまま）は、部署を気にしません。")
+    ends("同じ部署も出す", "別の部署を優先", st.sidebar)
+    boost = st.sidebar.slider("共通の文書がない人を優先", 0.0, 2.0, D["overlap_boost"], 0.1,
+                              help="右に動かすと、選んだ人と同じ文書に関わっていない人が、上に来やすくなります。"
+                                   "左は、共通の文書があるかどうかを気にしません。")
+    ends("気にしない", "優先する", st.sidebar)
     dist = similar.distribution(ids, matrix)
     if dist:
         st.sidebar.caption("参考：全社の2人組の近さ　" + "／".join(f"上位{round(100 - p, 1):g}% = {v:.2f}" for p, v in dist.items() if p >= 90))
@@ -305,8 +322,8 @@ elif page == "仲間を探す":
                             unsafe_allow_html=True)
                 st.markdown(f'<div class="score">調整後 <b>{p["score"]:.3f}</b> ＝ 近さ <span class="v">{p["sim"]:.3f}</span>'
                             f'{"　× 同じ部署 " + str(same_dept) if p["same_dept"] and same_dept != 1.0 else ""}'
-                            f'{"　× 重なりの少なさ加点" if boost else ""}</div>', unsafe_allow_html=True)
-                tags = ["同じ部署" if p["same_dept"] else "別の部署", f"関わった文書の重なり {p['overlap'] * 100:.0f}%"]
+                            f'{"　× 共通の文書がない人への加点" if boost else ""}</div>', unsafe_allow_html=True)
+                tags = ["同じ部署" if p["same_dept"] else "別の部署", f"共通の文書 {p['shared']}件"]
                 words = similar.shared_terms(texts.get(emp, ""), texts.get(p["emp"], ""))
                 if words:
                     tags.append("共通する語：" + "、".join(words))
