@@ -7,7 +7,7 @@
 #
 # 前提：
 #   ・load_masters.py で部署と社員を入れ済み
-#   ・initial_load/data/ に db_load_673.json を置く
+#   ・initial_load/data/ に db_load_673.json を置く（別のJSONを読むときは、ファイル名を引数に書く。例：python load_documents.py data/db_load_add80.json）
 #   ・同じキー（doc_code、章は doc_id＋section_no など）があれば上書きする
 #   ・章の embedding は入れない（空のまま）。embed_sections.py で書き込む
 #   ・body_tokens と document_keywords はJSONの値をそのまま入れる

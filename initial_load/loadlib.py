@@ -18,9 +18,12 @@ PAGE = 1000   # DBから一度に読む行数
 
 
 def load_json():
-    if not DATA_FILE.exists():
-        sys.exit(f"ファイルが見つかりません：{DATA_FILE}")
-    return json.loads(DATA_FILE.read_text(encoding="utf-8"))
+    """読むJSON。コマンドの引数（--で始まらないもの）にファイルを書けば、そのJSONを読む。なければ db_load_673.json"""
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    path = Path(args[0]) if args else DATA_FILE
+    if not path.exists():
+        sys.exit(f"ファイルが見つかりません：{path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def clean(value):
