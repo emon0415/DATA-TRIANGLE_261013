@@ -30,8 +30,8 @@ def check_files(files):
     """アップロードされたファイルを読んで、チェックの結果と登録済みの文書を返す"""
     masters = get_masters()
     results = {f.name: read_word(f.getvalue(), f.name, masters) for f in files}
-    doc_ids = [d["doc_id"] for rows, _, _ in results.values() for d in rows["documents"]]
-    existing = existing_docs(get_db(), doc_ids)
+    doc_codes = [d["doc_code"] for rows, _, _ in results.values() for d in rows["documents"]]
+    existing = existing_docs(get_db(), doc_codes)
     for filename, (more_problems, more_notes) in check_duplicates(results, existing).items():
         results[filename][1].extend(more_problems)
         results[filename][2].extend(more_notes)
@@ -50,7 +50,7 @@ def show_file(filename, rows, problems, notes):
         for n in notes:
             st.warning(n)
         if doc:
-            st.write(f"{doc['doc_id']}／{TYPE_NAMES[doc['doc_type']]}／"
+            st.write(f"{doc['doc_code']}／{TYPE_NAMES[doc['doc_type']]}／"
                      f"章 {len(rows['document_sections'])}件／関係者 {len(rows['document_authors'])}人")
             st.dataframe({
                 "章": [s["section_name"] for s in rows["document_sections"]],
@@ -64,15 +64,15 @@ def register(results):
     done = []
     with st.status("登録しています", expanded=True) as status:
         for filename, (rows, _, _) in results.items():
-            doc_id = rows["documents"][0]["doc_id"]
+            doc_code = rows["documents"][0]["doc_code"]
             try:
-                r = save_document(sb, rows)
-                st.write(f"✓ {doc_id}：文書・章・関係者と、キーワード {r['keywords']}件をデータベースに登録しました")
+                r = save_document(sb, rows)  # 振られた doc_id が rows の章にも入る
+                st.write(f"✓ {doc_code}：文書・章・関係者と、キーワード {r['keywords']}件をデータベースに登録しました")
                 n = embed_document(sb, rows)
-                st.write(f"✓ {doc_id}：章 {n}件を埋め込みました")
-                done.append(doc_id)
+                st.write(f"✓ {doc_code}：章 {n}件を埋め込みました")
+                done.append(doc_code)
             except Exception as e:  # 1件失敗しても、残りは続ける
-                st.write(f"✗ {doc_id}：失敗しました（{e}）")
+                st.write(f"✗ {doc_code}：失敗しました（{e}）")
         # 成功したときは、このあと画面を切り替えて「登録しました」を出すので、ここでは完了にしない
         # （完了にすると、切り替えの間「登録しました」のまま処理中の表示が続いてしまう）
         failed = len(results) - len(done)

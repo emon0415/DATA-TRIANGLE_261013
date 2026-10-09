@@ -16,6 +16,9 @@
 #       提案者・体制 … 2つ目の表（役割｜社員番号｜氏名｜部署）
 #       章          … スタイル「見出し1（Heading 1）」の段落で区切る
 #   ・部署名と社員番号の確認には、DBの departments と employees を使う
+#   ・DBは v5（SQL/v5_create.sql）。文書ID（KZ-2026-0302 など）は documents.doc_code に入れる。
+#     doc_id はDBが振る番号なので、ここでは作らない（db.save_document が登録のときに付ける）
+#   ・著者は、社員番号から社員マスタの emp_id を引いて入れる
 #   ・DBの接続情報は data-triangle フォルダ直下の .env に書く（SUPABASE_URL、SUPABASE_KEY）
 #   ・章の embedding は入れない（空のまま）。埋め込みは別の処理で書き込む
 #   ・python-docx は使わず、標準ライブラリだけで読む
@@ -45,7 +48,7 @@ INFO_LABELS = {
                 "終了日": "ended_at", "主管部門": "owner_dept_id", "最終更新日": "updated_at"},
 }
 REQUIRED = {"proposal": ["submitted_at", "proposal_area", "result"],
-            "project": ["pj_status", "started_at", "owner_dept_id"]}
+            "project": ["pj_status", "started_at", "planned_end_at", "owner_dept_id", "updated_at"]}
 DATE_COLUMNS = {"submitted_at", "decided_at", "started_at", "planned_end_at", "ended_at", "updated_at"}
 
 # 値を今のDBにある値に限る
@@ -55,6 +58,10 @@ ALLOWED = {
     "pj_status": {"完了", "進行中", "中止", "計画中"},
 }
 AUTHOR_ROLES = {"proposal": {"提案者"}, "project": {"責任者", "主担当", "副担当"}}
+
+# 文字数の上限（DBの check と同じ）
+MAX_LENGTH = {"title": 200, "source_file": 255, "result_reason": 500}
+MAX_SECTION_NAME, MAX_BODY = 50, 5000
 
 # 章の名前 → 章の役割（今のDBと同じ対応）
 SECTION_ROLES = {
@@ -133,13 +140,13 @@ def read_word(data, filename, masters):
         return empty, [f"文書の種類「{info.get('文書の種類', '')}」には対応していません"
                        f"（対応：{'、'.join(DOC_TYPES)}）"], notes
     doc_type = kind["doc_type"]
-    doc_id = info.get("文書ID", "")
-    if not re.fullmatch(re.escape(kind["prefix"]) + r"\d{4}-\d{4}", doc_id):
-        problems.append(f"文書ID「{doc_id}」の形が違います（例：{kind['prefix']}2026-0001）")
-    if Path(filename).stem != doc_id:
-        notes.append(f"ファイル名（{filename}）と文書ID（{doc_id}）が違います")
+    doc_code = info.get("文書ID", "")
+    if not re.fullmatch(re.escape(kind["prefix"]) + r"\d{4}-\d{4}", doc_code):
+        problems.append(f"文書ID「{doc_code}」の形が違います（例：{kind['prefix']}2026-0001）")
+    if Path(filename).stem != doc_code:
+        notes.append(f"ファイル名（{filename}）と文書ID（{doc_code}）が違います")
 
-    doc = {"doc_id": doc_id, "doc_type": doc_type, "doc_category": kind["doc_category"],
+    doc = {"doc_code": doc_code, "doc_type": doc_type, "doc_category": kind["doc_category"],
            "title": titles[0] if titles else None, "source_file": filename}
     if not titles:
         problems.append("表題（スタイル「表題」の段落）がありません")
@@ -160,6 +167,15 @@ def read_word(data, filename, masters):
     for column, allowed in ALLOWED.items():
         if doc.get(column) and doc[column] not in allowed:
             problems.append(f"{column} の値「{doc[column]}」は使えません（使える値：{'、'.join(allowed)}）")
+    for column, limit in MAX_LENGTH.items():
+        if doc.get(column) and len(doc[column]) > limit:
+            problems.append(f"{column} が長すぎます（{len(doc[column])}字。上限 {limit}字）")
+    if doc.get("result") == "審査中" and doc.get("decided_at"):
+        problems.append("判定が「審査中」のときは、判定日を空にしてください")
+    if doc.get("pj_status") in ("完了", "中止") and not doc.get("ended_at"):
+        problems.append(f"状態が「{doc['pj_status']}」のときは、終了日が必要です")
+    if doc.get("pj_status") in ("計画中", "進行中") and doc.get("ended_at"):
+        problems.append(f"状態が「{doc['pj_status']}」のときは、終了日を空にしてください")
     if doc_type == "project" and doc.get("owner_dept_id"):
         name = doc["owner_dept_id"]
         doc["owner_dept_id"] = dept_ids.get(name)
@@ -167,7 +183,7 @@ def read_word(data, filename, masters):
             problems.append(f"主管部門「{name}」が部署マスタにありません")
 
     # ---------- 提案者・体制 → document_authors ----------
-    authors = []
+    authors, emp_nos = [], []
     header, *rows = tables[1]
     if header[:4] != ["役割", "社員番号", "氏名", "部署"]:
         problems.append(f"提案者（体制）の表の見出しが違います：{'｜'.join(header)}")
@@ -176,6 +192,7 @@ def read_word(data, filename, masters):
         if role not in AUTHOR_ROLES[doc_type]:
             problems.append(f"役割「{role}」は使えません（使える値：{'、'.join(AUTHOR_ROLES[doc_type])}）")
         emp = employees.get(emp_no)
+        emp_nos.append(emp_no)
         if emp is None:
             problems.append(f"社員番号「{emp_no}」が社員マスタにありません")
         elif emp["name"] != name:
@@ -183,10 +200,10 @@ def read_word(data, filename, masters):
         dept_id = dept_ids.get(dept_name)
         if dept_id is None:
             problems.append(f"部署「{dept_name}」が部署マスタにありません")
-        authors.append({"doc_id": doc_id, "emp_no": emp_no, "role": role, "dept_id_at_time": dept_id})
+        authors.append({"emp_id": emp and emp["emp_id"], "role": role, "dept_id_at_time": dept_id})
     if not authors:
         problems.append("提案者（体制）が1人もいません")
-    dup = {a["emp_no"] for a in authors if sum(b["emp_no"] == a["emp_no"] for b in authors) > 1}
+    dup = {n for n in emp_nos if emp_nos.count(n) > 1}
     if dup:
         problems.append(f"同じ社員番号が2回出てきます：{'、'.join(sorted(dup))}")
 
@@ -204,10 +221,15 @@ def read_word(data, filename, masters):
         role = roles.get(s["name"])
         if role is None:
             problems.append(f"章「{s['name']}」の役割が決まっていません（使える章：{'、'.join(roles)}）")
+        if len(s["name"]) > MAX_SECTION_NAME:
+            problems.append(f"章の名前「{s['name']}」が長すぎます（上限 {MAX_SECTION_NAME}字）")
         if not s["paras"]:
             problems.append(f"章「{s['name']}」の本文が空です")
-        section_rows.append({"doc_id": doc_id, "section_no": no, "section_name": s["name"],
-                             "section_role": role, "body": "\n".join(s["paras"])})
+        body = "\n".join(s["paras"])
+        if len(body) > MAX_BODY:
+            problems.append(f"章「{s['name']}」の本文が長すぎます（{len(body)}字。上限 {MAX_BODY}字）")
+        section_rows.append({"section_no": no, "section_name": s["name"],
+                             "section_role": role, "body": body})
     if not section_rows:
         problems.append("章（スタイル「見出し1」の段落）が1つもありません")
 
@@ -221,16 +243,16 @@ def check_duplicates(results, existing):
     found = {}
     for filename, (rows, _, _) in results.items():
         for doc in rows["documents"]:
-            found.setdefault(doc["doc_id"], []).append(filename)
+            found.setdefault(doc["doc_code"], []).append(filename)
     checks = {filename: ([], []) for filename in results}
-    for doc_id, filenames in found.items():
+    for doc_code, filenames in found.items():
         if len(filenames) > 1:
             for f in filenames:
-                checks[f][0].append(f"同じ文書ID {doc_id} のファイルが複数あります：{'、'.join(filenames)}")
-        if doc_id in existing:
-            old = existing[doc_id]
+                checks[f][0].append(f"同じ文書ID {doc_code} のファイルが複数あります：{'、'.join(filenames)}")
+        if doc_code in existing:
+            old = existing[doc_code]
             for f in filenames:
-                checks[f][1].append(f"文書ID {doc_id} はDBに登録済みです（{old['title']}／{old['source_file']}）。"
+                checks[f][1].append(f"文書ID {doc_code} はDBに登録済みです（{old['title']}／{old['source_file']}）。"
                                     "登録すると、文書・章・著者を上書きします")
     return checks
 
@@ -250,8 +272,8 @@ def main():
     sb = connect()
     masters = load_masters(sb)
     results = {path.name: read_word(path.read_bytes(), path.name, masters) for path in paths}
-    doc_ids = [d["doc_id"] for rows, _, _ in results.values() for d in rows["documents"]]
-    existing = existing_docs(sb, doc_ids)
+    doc_codes = [d["doc_code"] for rows, _, _ in results.values() for d in rows["documents"]]
+    existing = existing_docs(sb, doc_codes)
     for filename, (more_problems, more_notes) in check_duplicates(results, existing).items():
         results[filename][1].extend(more_problems)
         results[filename][2].extend(more_notes)
@@ -284,13 +306,13 @@ def main():
     from db import save_document
     print()
     for filename, (rows, _, _) in results.items():
-        doc_id = rows["documents"][0]["doc_id"]
+        doc_code = rows["documents"][0]["doc_code"]
         r = save_document(sb, rows)
-        action = "上書き" if doc_id in existing else "新規登録"
+        action = "上書き" if doc_code in existing else "新規登録"
         extra = ""
         if r["removed_sections"] or r["removed_authors"]:
             extra = f"（減った章 {r['removed_sections']}件・著者 {r['removed_authors']}件を削除）"
-        print(f"【{action}】{doc_id}：章 {r['sections']}件、著者 {r['authors']}件、キーワード {r['keywords']}件{extra}")
+        print(f"【{action}】{doc_code}：章 {r['sections']}件、著者 {r['authors']}件、キーワード {r['keywords']}件{extra}")
     print("章の埋め込みは空のままです。埋め込みの処理で書き込んでください。")
 
 
