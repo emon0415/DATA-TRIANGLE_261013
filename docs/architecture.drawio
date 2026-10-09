@@ -1,129 +1,91 @@
 <mxfile host="app.diagrams.net">
   <diagram name="アーキテクチャ" id="architecture">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="860" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="900" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="隠れ出る杭検索　アーキテクチャ図（2026-09-30）" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=16;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="0" width="700" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="user" value="社員&lt;br&gt;（ブラウザ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1">
-          <mxGeometry x="420" y="50" width="160" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="app" value="アプリ（Streamlit・Python）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="40" y="140" width="920" height="410" as="geometry" />
-        </mxCell>
-        <mxCell id="main" value="app.py&lt;br&gt;入口・タブの切り替え（未作成）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" vertex="1" parent="app">
-          <mxGeometry x="370" y="40" width="180" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="reg" value="登録タブ　register/（まよりん・実装済み）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="app">
-          <mxGeometry x="20" y="120" width="430" height="270" as="geometry" />
-        </mxCell>
-        <mxCell id="r_page" value="page.py&lt;br&gt;画面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
-          <mxGeometry x="125" y="45" width="180" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="r_word" value="word_to_rows.py&lt;br&gt;Wordを読む・チェック" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
-          <mxGeometry x="20" y="125" width="180" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="r_db" value="db.py&lt;br&gt;DBの読み書き" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
-          <mxGeometry x="225" y="125" width="185" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="r_emb" value="embed.py&lt;br&gt;章の埋め込み" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg">
-          <mxGeometry x="225" y="205" width="185" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="srch" value="検索タブ（ほりえもん・作成中）" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;swimlaneFillColor=#FFFFFF;rounded=0;dashed=1;" vertex="1" parent="app">
-          <mxGeometry x="470" y="120" width="430" height="270" as="geometry" />
-        </mxCell>
-        <mxCell id="s_page" value="画面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
-          <mxGeometry x="125" y="45" width="180" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="s_vec" value="ベクトル検索" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
-          <mxGeometry x="20" y="125" width="180" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="s_kw" value="キーワード検索&lt;br&gt;SudachiPy" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
-          <mxGeometry x="225" y="125" width="185" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="s_rrf" value="2つの結果を統合&lt;br&gt;RRF" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;dashed=1;" vertex="1" parent="srch">
-          <mxGeometry x="125" y="205" width="180" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="ext" value="外部サービス" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="40" y="610" width="920" height="190" as="geometry" />
-        </mxCell>
-        <mxCell id="supa" value="&lt;b&gt;Supabase&lt;/b&gt;&lt;br&gt;PostgreSQL＋pgvector&lt;br&gt;documents・document_sections・document_authors&lt;br&gt;employees・departments" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="ext">
-          <mxGeometry x="60" y="45" width="480" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="openai" value="&lt;b&gt;OpenAI API&lt;/b&gt;&lt;br&gt;text-embedding-3-small&lt;br&gt;（1536次元）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="ext">
-          <mxGeometry x="620" y="70" width="240" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="batch" value="初期ロード　initial_load/&lt;br&gt;（最初に1回だけ・実行済み）" style="swimlane;fontStyle=1;startSize=40;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="610" width="260" height="190" as="geometry" />
-        </mxCell>
-        <mxCell id="b_m" value="load_masters.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
-          <mxGeometry x="20" y="55" width="220" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="b_d" value="load_documents.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
-          <mxGeometry x="20" y="100" width="220" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="b_e" value="embed_sections.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="batch">
-          <mxGeometry x="20" y="145" width="220" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="env" value="&lt;b&gt;.env&lt;/b&gt;（各自のPC・Gitには上げない）&lt;br&gt;SUPABASE_URL・SUPABASE_KEY&lt;br&gt;OPENAI_API_KEY&lt;br&gt;アプリと初期ロードが読む" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=14;align=left;spacingLeft=8;fontSize=11;fillColor=#FAEEDA;strokeColor=#854F0B;fontColor=#633806;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="140" width="260" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="legend" value="&lt;b&gt;凡例&lt;/b&gt;&lt;br&gt;━ 実線：実装済み&lt;br&gt;┅ 点線：作成中・未作成&lt;br&gt;&lt;font color='#0F6E56'&gt;■&lt;/font&gt; 登録タブ（まよりん）&lt;br&gt;&lt;font color='#534AB7'&gt;■&lt;/font&gt; 検索タブ（ほりえもん）&lt;br&gt;&lt;font color='#993C1D'&gt;■&lt;/font&gt; 外部サービス&lt;br&gt;&lt;font color='#5F5E5A'&gt;■&lt;/font&gt; アプリ全体・初期ロード&lt;br&gt;データの流れは data_flow.md" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="270" width="260" height="170" as="geometry" />
-        </mxCell>
-        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="user" target="main">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="main" target="r_page">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="main" target="s_page">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_page" target="r_word">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_page" target="r_db">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="r_db" target="r_emb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e7" value="文書・章・関係者を書き込む&lt;br&gt;マスタで照合" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0;exitY=0.5;entryX=0.3;entryY=0;" edge="1" parent="1" source="r_db" target="supa">
-          <mxGeometry x="0.55" relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e9" value="埋め込みを保存" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.5;exitY=1;entryX=0.6;entryY=0;" edge="1" parent="1" source="r_emb" target="supa">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e8" value="章→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.75;entryX=0.7;entryY=0;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="r_emb" target="openai">
-          <mxGeometry x="0.6" relative="1" as="geometry"><Array as="points"><mxPoint x="484" y="494" /><mxPoint x="484" y="590" /><mxPoint x="828" y="590" /></Array></mxGeometry>
-        </mxCell>
-        <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_page" target="s_vec">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_page" target="s_kw">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_vec" target="s_rrf">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;" edge="1" parent="1" source="s_kw" target="s_rrf">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e14" value="相談文→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.45;exitY=1;entryX=0.25;entryY=0;dashed=1;" edge="1" parent="1" source="srch" target="openai">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e15" value="章と人を探す" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.1;exitY=1;entryX=0.95;entryY=0;dashed=1;" edge="1" parent="1" source="srch" target="supa">
-          <mxGeometry x="-0.3" relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e17" value="マスタ・373件を投入" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="batch" target="supa">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1140" y="830" /><mxPoint x="340" y="830" /></Array></mxGeometry>
-        </mxCell>
-        <mxCell id="e18" value="章→ベクトル" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="b_e" target="openai">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
+        <mxCell id="title" value="隠れ出る杭検索　アーキテクチャ図（2026-10-10）" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="0" width="700" height="30" as="geometry" /></mxCell>
+        <mxCell id="legend" value="緑＝登録（まよりん）／紫＝検索・看板（ほりえもん）／灰＝共通" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1"><mxGeometry x="760" y="6" width="500" height="24" as="geometry" /></mxCell>
+        <mxCell id="user" value="社員&lt;br&gt;（ブラウザ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="450" y="45" width="180" height="50" as="geometry" /></mxCell>
+        <mxCell id="app" value="アプリ（Streamlit・Python）　app.py：サイドバーで画面を切り替える" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="1010" height="600" as="geometry" /></mxCell>
+        <mxCell id="p_reg" value="文書を登録する&lt;br&gt;Wordをアップロード" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;fontStyle=1;" vertex="1" parent="app"><mxGeometry x="20" y="40" width="220" height="55" as="geometry" /></mxCell>
+        <mxCell id="p_sim" value="仲間を探す&lt;br&gt;社員番号から、考えの近い人" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="app"><mxGeometry x="265" y="40" width="220" height="55" as="geometry" /></mxCell>
+        <mxCell id="p_dev" value="個人看板を検索（開発用）&lt;br&gt;看板の中身を見る" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="app"><mxGeometry x="510" y="40" width="220" height="55" as="geometry" /></mxCell>
+        <mxCell id="p_srch" value="人を探す&lt;br&gt;相談文から探す" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="app"><mxGeometry x="755" y="40" width="220" height="55" as="geometry" /></mxCell>
+        <mxCell id="reg" value="登録　register/" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="app"><mxGeometry x="20" y="125" width="230" height="455" as="geometry" /></mxCell>
+        <mxCell id="r_page" value="page.py&lt;br&gt;画面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg"><mxGeometry x="15" y="40" width="200" height="55" as="geometry" /></mxCell>
+        <mxCell id="r_word" value="word_to_rows.py&lt;br&gt;Wordを読む・入力のチェック" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg"><mxGeometry x="15" y="110" width="200" height="55" as="geometry" /></mxCell>
+        <mxCell id="r_db" value="db.py&lt;br&gt;DBの読み書き&lt;br&gt;（doc_code で上書き）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg"><mxGeometry x="15" y="180" width="200" height="55" as="geometry" /></mxCell>
+        <mxCell id="r_emb" value="embed.py&lt;br&gt;章の埋め込み" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;" vertex="1" parent="reg"><mxGeometry x="15" y="250" width="200" height="55" as="geometry" /></mxCell>
+        <mxCell id="r_note" value="登録のあと：&lt;br&gt;・関係者の看板を作り直す&lt;br&gt;・検索のキャッシュを消す&lt;br&gt;→ すぐ検索に出る" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="reg"><mxGeometry x="15" y="330" width="200" height="90" as="geometry" /></mxCell>
+        <mxCell id="srch" value="検索・看板　search/" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="app"><mxGeometry x="265" y="125" width="725" height="455" as="geometry" /></mxCell>
+        <mxCell id="s_h1" value="看板・仲間を探す・もっと調べる" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="15" y="32" width="330" height="20" as="geometry" /></mxCell>
+        <mxCell id="s_h2" value="人を探す" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="32" width="330" height="20" as="geometry" /></mxCell>
+        <mxCell id="s_sim" value="similar.py&lt;br&gt;仲間を探す：看板のベクトルの近さ" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="15" y="50" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_brief" value="person_brief.py&lt;br&gt;もっと調べる：AIの紹介文（出典を確かめる）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="15" y="115" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_prof" value="profiles.py・profiles_store.py&lt;br&gt;看板を作る（ノート → 文章 → 埋め込み）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="15" y="180" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_svc" value="service.py&lt;br&gt;人を探す のまとめ役" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="55" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_ret" value="retrieve.py&lt;br&gt;ベクトル検索＋全文検索（PGroonga）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="125" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_rank" value="rank.py&lt;br&gt;RRFで統合 → 章 → 文書 → 人" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="195" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_tok" value="tokenizer.py&lt;br&gt;形態素解析（SudachiPy）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="265" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="s_emb" value="embed.py&lt;br&gt;質問文の埋め込み" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="srch"><mxGeometry x="375" y="335" width="330" height="55" as="geometry" /></mxCell>
+        <mxCell id="supa" value="Supabase（PostgreSQL）&lt;br&gt;pgvector：ベクトル&lt;br&gt;PGroonga：全文検索&lt;br&gt;&lt;br&gt;文書754件・章3,152件&lt;br&gt;看板623人" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="1"><mxGeometry x="1170" y="330" width="230" height="190" as="geometry" /></mxCell>
+        <mxCell id="openai" value="OpenAI API&lt;br&gt;text-embedding-3-small：埋め込み&lt;br&gt;gpt-4o-mini：紹介文" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="1"><mxGeometry x="1170" y="175" width="230" height="90" as="geometry" /></mxCell>
+        <mxCell id="batch" value="初期ロード　initial_load/（実行済み）&lt;br&gt;load_masters・load_documents（753件）&lt;br&gt;embed_sections・load_career_sheets（130人）&lt;br&gt;build_profiles（看板）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="40" y="770" width="330" height="100" as="geometry" /></mxCell>
+        <mxCell id="dev" value="開発用の確認画面　_test/&lt;br&gt;rank/app.py：比重を動かして順位を見る&lt;br&gt;search_eval/：評価セット11問" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="400" y="770" width="330" height="100" as="geometry" /></mxCell>
+        <mxCell id="todo" value="未定のこと&lt;br&gt;・どこで動かすか（各自のPC／公開）&lt;br&gt;・登録タブでアイデア投稿（IDEA-）を扱うか&lt;br&gt;・キャリアシートを画面から登録するか&lt;br&gt;・タグ・クラスタ・ログイン・関心の記録の表（未使用）" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=14;align=left;spacingLeft=8;fontSize=11;fillColor=#FAEEDA;strokeColor=#854F0B;fontColor=#633806;" vertex="1" parent="1"><mxGeometry x="760" y="770" width="380" height="110" as="geometry" /></mxCell>
+        <mxCell id="e30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="user" target="p_reg"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="user" target="p_srch"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="user" target="p_sim"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="p_reg" target="r_page"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="p_srch" target="s_svc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="p_sim" target="s_sim"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="r_db" target="s_prof"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e37" value="読み書き&lt;br&gt;全文検索の関数（RPC）" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.49;entryX=0;entryY=0.5;" edge="1" parent="1" source="app" target="supa"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e38" value="章・質問文・看板 → ベクトル&lt;br&gt;紹介文を書く" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.15;entryX=0;entryY=0.5;" edge="1" parent="1" source="app" target="openai"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="batch" target="supa"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;dashed=1;exitX=0.5;exitY=0;entryX=0.6;entryY=1;" edge="1" parent="1" source="dev" target="srch"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="データフロー" id="dataflow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1480" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="隠れ出る杭検索　データフロー図（2026-10-10）" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="0" width="700" height="30" as="geometry" /></mxCell>
+        <mxCell id="legend" value="入ってくるデータ → 登録・初期ロード → DB（事実データ → 看板）→ 3つの使い方" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1"><mxGeometry x="760" y="6" width="640" height="24" as="geometry" /></mxCell>
+        <mxCell id="in_word" value="Word文書&lt;br&gt;改善提案・PJ文書" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="40" y="100" width="170" height="60" as="geometry" /></mxCell>
+        <mxCell id="in_json" value="初期データ（JSON）&lt;br&gt;文書753件・部署・社員" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="170" height="60" as="geometry" /></mxCell>
+        <mxCell id="in_cs" value="キャリアシート&lt;br&gt;本人が書く3項目&lt;br&gt;（モック130人分）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="40" y="400" width="170" height="70" as="geometry" /></mxCell>
+        <mxCell id="reg" value="登録タブ&lt;br&gt;チェック → 登録&lt;br&gt;章の埋め込み&lt;br&gt;関係者の看板も作り直す" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E1F5EE;strokeColor=#0F6E56;fontColor=#0F6E56;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="260" y="90" width="180" height="85" as="geometry" /></mxCell>
+        <mxCell id="load" value="初期ロード&lt;br&gt;（最初に1回）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="270" y="340" width="160" height="70" as="geometry" /></mxCell>
+        <mxCell id="db" value="Supabase" style="swimlane;fontStyle=1;startSize=26;horizontal=1;collapsible=0;html=1;whiteSpace=wrap;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;swimlaneFillColor=#FFFFFF;rounded=0;" vertex="1" parent="1"><mxGeometry x="490" y="70" width="380" height="470" as="geometry" /></mxCell>
+        <mxCell id="t_fact" value="事実データ&lt;br&gt;documents 文書&lt;br&gt;document_sections 章・全文の列・埋め込み&lt;br&gt;document_authors 著者&lt;br&gt;document_keywords キーワード" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="db"><mxGeometry x="20" y="40" width="340" height="130" as="geometry" /></mxCell>
+        <mxCell id="t_prof" value="看板（AI生成物）&lt;br&gt;profile_notes ノート（文書の抜粋・キャリアシート）&lt;br&gt;profiles 看板の文章・埋め込み" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;" vertex="1" parent="db"><mxGeometry x="20" y="210" width="340" height="100" as="geometry" /></mxCell>
+        <mxCell id="t_mst" value="マスタ&lt;br&gt;departments 部署・employees 社員" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAECE7;strokeColor=#993C1D;fontColor=#993C1D;" vertex="1" parent="db"><mxGeometry x="20" y="350" width="340" height="90" as="geometry" /></mxCell>
+        <mxCell id="u_srch" value="人を探す&lt;br&gt;入力：相談したいこと&lt;br&gt;ベクトル＋全文 → RRF → 章→文書→人" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="960" y="130" width="230" height="80" as="geometry" /></mxCell>
+        <mxCell id="u_sim" value="仲間を探す&lt;br&gt;入力：社員番号&lt;br&gt;看板のベクトルの近さ" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="960" y="290" width="230" height="80" as="geometry" /></mxCell>
+        <mxCell id="u_brief" value="もっと調べる&lt;br&gt;入力：選んだ1人&lt;br&gt;ノートから AI が紹介文" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EEEDFE;strokeColor=#534AB7;fontColor=#534AB7;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="960" y="450" width="230" height="80" as="geometry" /></mxCell>
+        <mxCell id="o_srch" value="実績のある人&lt;br&gt;隠れた杭" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="1260" y="140" width="180" height="60" as="geometry" /></mxCell>
+        <mxCell id="o_sim" value="考えの近い人" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="1260" y="300" width="180" height="60" as="geometry" /></mxCell>
+        <mxCell id="o_brief" value="紹介文（出典つき）&lt;br&gt;得意分野・意欲・実績・留意点" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="960" y="600" width="230" height="60" as="geometry" /></mxCell>
+        <mxCell id="e17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="in_word" target="reg"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="in_json" target="load"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="in_cs" target="load"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e20" value="文書・章・著者&lt;br&gt;キーワード" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="reg" target="t_fact"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.25;entryX=0;entryY=0.8;" edge="1" parent="1" source="load" target="t_fact"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e22" value="本人入力" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.5;entryX=0;entryY=0.7;" edge="1" parent="1" source="load" target="t_prof"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" edge="1" parent="1" source="load" target="t_mst"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e24" value="文書の抜粋を&lt;br&gt;ノートに" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="t_fact" target="t_prof"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e25" value="章の埋め込み&lt;br&gt;全文の列" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="t_fact" target="u_srch"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e26" value="看板の埋め込み" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" edge="1" parent="1" source="t_prof" target="u_sim"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e27" value="ノート" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.8;entryX=0;entryY=0.5;" edge="1" parent="1" source="t_prof" target="u_brief"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="u_srch" target="o_srch"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="u_sim" target="o_sim"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;" edge="1" parent="1" source="u_brief" target="o_brief"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e31" value="1人選ぶ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.5;entryX=1;entryY=0.3;" edge="1" parent="1" source="o_srch" target="u_brief"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;strokeColor=#5F5E5A;fontColor=#5F5E5A;exitX=1;exitY=0.5;entryX=1;entryY=0.3;" edge="1" parent="1" source="o_sim" target="u_brief"><mxGeometry relative="1" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
