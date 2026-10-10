@@ -77,22 +77,22 @@ flowchart TB
 | Supabase | データベース（PostgreSQL）。pgvector で埋め込みを、PGroonga で全文検索の索引を持つ | － | 稼働中 |
 | OpenAI API | 章・質問文・看板をベクトルにする（text-embedding-3-small、1536次元）。紹介文を書く（gpt-4o-mini） | － | 稼働中 |
 | SudachiPy | 日本語を単語に分ける。登録のとき（全文検索の列・キーワード）と検索のとき（質問文）に使う | ほりえもん | 稼働中 |
-| 初期ロード（initial_load/） | マスタ・文書753件・章の埋め込み・キャリアシート130人分・看板を入れる | ほりえもん・まよりん | 実行済み |
+| 初期ロード（initial_load/） | マスタ・文書（db_load_673.json と追加分 db_load_add_*.json）・章の埋め込み・キャリアシート・看板を入れる | ほりえもん・まよりん | 実行済み |
 | 開発用の確認画面（_test/rank/app.py） | 全文の比重・役割の重みなどを動かし、順位と評価セット11問の点数がどう変わるかを見る。既定値を決めるための画面 | ほりえもん | 稼働中 |
 | .env | 接続情報とAPIキー（SUPABASE_URL・SUPABASE_KEY・OPENAI_API_KEY）。`.gitignore` 済みでGitには上げない | 各自 | － |
 
-## 3. DBの表（2026-10-10 時点の件数）
+## 3. DBの表（2026-10-10 時点の件数。ナレッジの拡充のあと）
 
 | まとまり | 表 | 件数 | 何が入っているか |
 |---|---|---|---|
 | マスタ | departments | 41 | 部署 |
 | マスタ | employees | 772 | 社員 |
-| 事実データ | documents | 754 | 文書（改善提案 314／PJ文書 100／アイデア投稿 340） |
-| 事実データ | document_sections | 3,152 | 章の本文・全文検索の列（body_tokens）・埋め込み。検索の単位 |
-| 事実データ | document_authors | 974 | 誰がどの役割で文書に関わったか |
-| 事実データ | document_keywords | 6,029 | 文書のキーワード（検索結果に出す） |
-| AI生成物 | profiles | 623 | 看板の文章と埋め込み（1人1行） |
-| AI生成物 | profile_notes | 1,338 | 看板のノート（文書の抜粋 974／キャリアシート 364・130人分） |
+| 事実データ | documents | 1,483 | 文書（改善提案 593／PJ文書 300／アイデア投稿 590） |
+| 事実データ | document_sections | 6,335 | 章の本文・全文検索の列（body_tokens）・埋め込み。検索の単位 |
+| 事実データ | document_authors | 2,023 | 誰がどの役割で文書に関わったか |
+| 事実データ | document_keywords | 11,869 | 文書のキーワード（検索結果に出す） |
+| AI生成物 | profiles | 767 | 看板の文章と埋め込み（1人1行） |
+| AI生成物 | profile_notes | 3,014 | 看板のノート（文書の抜粋 1,775／キャリアシート 1,239・367人分） |
 | 予定（未使用） | tags・cluster_runs・clusters・cluster_members・app_users・interests | 0 | タグ、クラスタ分析、ログイン、関心の記録 |
 
 ## 4. 未定のこと

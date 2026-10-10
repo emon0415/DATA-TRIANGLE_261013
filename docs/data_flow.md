@@ -14,7 +14,7 @@
 flowchart LR
     subgraph IN["入ってくるデータ"]
         W["Word文書<br>改善提案・PJ文書"]
-        J["初期データ（JSON）<br>文書753件・部署・社員"]
+        J["初期データ（JSON）<br>文書・部署・社員"]
         C["キャリアシート<br>本人が書く3項目"]
     end
 
@@ -59,10 +59,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    J["db_load_673.json<br>db_load_add80.json"] --> LM["load_masters.py"] --> T1[("departments<br>employees")]
+    J["db_load_673.json<br>追加分 db_load_add_*.json"] --> LM["load_masters.py"] --> T1[("departments<br>employees")]
     J --> LD["load_documents.py"] --> T2[("documents・document_sections<br>document_authors・document_keywords")]
     T2 -- "埋め込みが空の章" --> ES["embed_sections.py"] -- "章のベクトル" --> T2
-    CS["career_sheets_mock.json<br>130人分"] --> LC["load_career_sheets.py"] --> T3[("profile_notes<br>（本人入力）")]
+    CS["career_sheets_mock.json<br>（モック）"] --> LC["load_career_sheets.py"] --> T3[("profile_notes<br>（本人入力）")]
     T2 & T3 --> BP["build_profiles.py"] --> T4[("profile_notes（文書の抜粋）<br>profiles（看板・埋め込み）")]
     ES <--> OPENAI["OpenAI<br>埋め込み"]
     BP <--> OPENAI
