@@ -1,5 +1,6 @@
 """
 登録タブの画面：Word文書をアップロードすると、チェックしてからDBに登録し、章を埋め込む
+登録のあと、関係者の看板（profiles）を作り直し、検索のキャッシュを消す（すぐ検索に出るように）
 単体で起動：streamlit run register/page.py
 app.py から呼ぶ：from register.page import show → show()
 """
@@ -12,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))  # app.py から呼ばれても d
 from db import connect, existing_docs, load_masters, save_document  # noqa: E402
 from embed import embed_document  # noqa: E402
 from word_to_rows import check_duplicates, read_word  # noqa: E402
+from search import profiles_store  # noqa: E402  （search/ は db.py が読めるようにしている）
 
 TYPE_NAMES = {"proposal": "改善提案", "project": "PJ文書"}
 
@@ -70,11 +72,18 @@ def register(results):
                 st.write(f"✓ {doc_code}：文書・章・関係者と、キーワード {r['keywords']}件をデータベースに登録しました")
                 n = embed_document(sb, rows)
                 st.write(f"✓ {doc_code}：章 {n}件を埋め込みました")
+                p = profiles_store.rebuild(sb, emp_ids=r["emp_ids"])
+                st.write(f"✓ {doc_code}：関係者 {p['people']}人の看板を更新しました")
                 done.append(doc_code)
             except Exception as e:  # 1件失敗しても、残りは続ける
                 st.write(f"✗ {doc_code}：失敗しました（{e}）")
         # 成功したときは、このあと画面を切り替えて「登録しました」を出すので、ここでは完了にしない
         # （完了にすると、切り替えの間「登録しました」のまま処理中の表示が続いてしまう）
+        if done:
+            # 「人を探す」「仲間を探す」は起動時に読んだデータをキャッシュしている。
+            # 消しておくと、次に開いたときにDBから読み直し、登録した文書がすぐ検索に出る
+            st.cache_resource.clear()
+            st.cache_data.clear()
         failed = len(results) - len(done)
         if failed:
             status.update(label=f"{failed}件が失敗しました。同じファイルで、もう一度登録してください",

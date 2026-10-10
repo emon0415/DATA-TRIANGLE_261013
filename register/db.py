@@ -92,5 +92,8 @@ def save_document(sb, rows):
     sb.table("document_keywords").delete().eq("doc_id", doc_id).execute()
     if keywords:
         sb.table("document_keywords").insert(keywords).execute()
+    # 看板を作り直す人：今の著者と、この版で外れた著者
+    emp_ids = set(keep) | {a["emp_id"] for a in removed_authors}
     return {"sections": len(sections), "authors": len(authors), "keywords": len(keywords),
-            "removed_sections": len(removed_sections), "removed_authors": len(removed_authors)}
+            "removed_sections": len(removed_sections), "removed_authors": len(removed_authors),
+            "emp_ids": emp_ids}
