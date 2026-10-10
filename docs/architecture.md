@@ -4,6 +4,10 @@
 データの流れは [data_flow.md](data_flow.md)、表の中身は [テーブル定義書.md](テーブル定義書.md) を見てください。
 同じ内容を draw.io でも描いています（[architecture.drawio](architecture.drawio)。発表資料用に見た目を直せます。ページは「アーキテクチャ」と「データフロー」の2枚）。
 
+- **見るだけなら PDF**：[architecture.pdf](architecture.pdf)（draw.io の2ページをそのまま書き出したもの。GitHub 上でもそのまま見られます）
+- **直すときは draw.io**：GitHub では .drawio は図として表示されません。ファイルをダウンロードして、ブラウザで <https://app.diagrams.net> を開き「既存の図を開く」から選ぶか、VS Code の拡張機能「Draw.io Integration」で開いてください
+- draw.io を直したら、PDF も書き出し直してください（draw.io の「ファイル → エクスポート → PDF」で「すべてのページ」）
+
 - 更新日：2026-10-10（DB v5、検索・仲間を探す・個人看板の完成を反映）
 - 色：緑＝登録（まよりん）／紫＝検索・看板（ほりえもん）／灰＝共通・外部サービス
 - 点線の枠は、表だけ作って、まだ使っていない部分（予定）です
