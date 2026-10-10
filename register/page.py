@@ -12,7 +12,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent))  # app.py から呼ばれても db.py などを読めるように
 from db import connect, existing_docs, load_masters, save_document  # noqa: E402
 from embed import embed_document  # noqa: E402
-from word_to_rows import check_duplicates, read_word  # noqa: E402
+from word_to_rows import DOC_TYPES, MAX_BYTES, SECTION_ROLES, check_duplicates, read_word  # noqa: E402
 from search import profiles_store  # noqa: E402  （search/ は db.py が読めるようにしている）
 
 TYPE_NAMES = {"proposal": "改善提案", "project": "PJ文書"}
@@ -91,18 +91,34 @@ def register(results):
     return done
 
 
+def show_guide():
+    """サイドバー：登録できるWordの形（ほかの画面と同じく、条件や説明はサイドバーに置く）"""
+    with st.sidebar:
+        st.subheader("登録できる文書")
+        st.caption(f"Word（.docx）、1ファイル {MAX_BYTES // 1024 // 1024}MB まで。何件かまとめて選べます。")
+        for name, kind in DOC_TYPES.items():
+            with st.expander(f"{name}（{kind['prefix']}2026-0001）"):
+                st.caption("章の名前（スタイル「見出し1」）：")
+                st.caption("／".join(SECTION_ROLES[kind["doc_type"]]))
+        st.caption("文書番号がすでにあるときは、登録の前に「上書きするか」を確かめます。")
+
+
 def show():
+    show_guide()
     st.title("文書を登録する")
-    st.caption("提案書やPJ文書（Word）をアップロードすると、章ごとに分けてデータベースに登録します。")
+    st.markdown('<p class="lead">提案書やPJ文書（Word）をアップロードすると、章ごとに分けてデータベースに登録します。'
+                '登録した文書は、すぐ「人を探す」「仲間を探す」に出ます。</p>', unsafe_allow_html=True)
 
     # 登録が終わったら、アップロード欄を空に戻すために key を変える
     st.session_state.setdefault("upload_key", 0)
-    files = st.file_uploader("Word文書（.docx）", type=["docx"], accept_multiple_files=True,
-                             key=f"upload_{st.session_state.upload_key}")
+    files = st.file_uploader(f"Word文書（.docx、1ファイル {MAX_BYTES // 1024 // 1024}MB まで）", type=["docx"],
+                             accept_multiple_files=True, key=f"upload_{st.session_state.upload_key}")
 
     if st.session_state.get("registered"):
         st.success(f"登録しました：{'、'.join(st.session_state.registered)}")
     if not files:
+        if not st.session_state.get("registered"):
+            st.info("Wordを選ぶと、登録する前に中身をチェックします。この時点では、まだデータベースに書き込みません。")
         return
     st.session_state.pop("registered", None)
 
@@ -121,6 +137,7 @@ def show():
         return
     overwrite = True
     if existing:
+        st.caption("⚠️ の文書は、すでに登録されています。上書きしてよければ、チェックを入れてから登録してください。")
         overwrite = st.checkbox(f"登録済みの文書（{'、'.join(sorted(existing))}）を上書きする")
     if st.button(f"{len(results)}件をデータベースに登録する", type="primary", disabled=not overwrite):
         done = register(results)
