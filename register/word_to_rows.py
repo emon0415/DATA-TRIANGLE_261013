@@ -252,8 +252,8 @@ def check_duplicates(results, existing):
         if doc_code in existing:
             old = existing[doc_code]
             for f in filenames:
-                checks[f][1].append(f"文書ID {doc_code} はDBに登録済みです（{old['title']}／{old['source_file']}）。"
-                                    "登録すると、文書・章・著者を上書きします")
+                checks[f][1].append(f"文書ID {doc_code} は、すでに登録されています（{old['title']}／{old['source_file']}）。"
+                                    "まだ書き込んでいません。このまま登録すると、今の内容を上書きします")
     return checks
 
 
