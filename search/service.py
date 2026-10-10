@@ -11,7 +11,9 @@
 # =============================================================
 from search import embed, profiles as P, rank, retrieve
 
-DEFAULTS = {"w_fts": 0.5, "beta": 0.3, "top_n": 5, "vec_min": 0.30, "fts_min": 0.0}
+# 足切りの既定値は、テーマ別36問（_test/search_eval/eval_themes.py）で決めた：ベクトル 0.50／全文 8
+# （範囲内30問はすべて結果が出て、範囲外6問のうち5問が「該当なし」になる。問いが少ないので、目安として使う）
+DEFAULTS = {"w_fts": 0.5, "beta": 0.3, "top_n": 5, "vec_min": 0.50, "fts_min": 8.0}
 
 
 def _fetch_all(sb, table, cols, order, page=1000):
