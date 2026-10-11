@@ -34,6 +34,11 @@ html, body, [class*="css"] { font-family: 'Noto Sans JP', sans-serif; }
 
 # ---------- 画面の切り替え ----------
 page = st.sidebar.radio("画面", ["人を探す", "仲間を探す", "属人化マップ", "空白地帯マップ", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed")
+try:                                                    # 一時的な確認用：サーバーのメモリ使用量（切り分けが終わったら消す）
+    import psutil
+    st.sidebar.caption(f"メモリ使用量：{psutil.Process().memory_info().rss / 1e6:,.0f} MB")
+except Exception:
+    pass
 
 # ========== 人を探す ==========
 @st.cache_resource(show_spinner="検索の準備をしています（初回だけ時間がかかります）")
