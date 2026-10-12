@@ -1,0 +1,3 @@
+[server]
+# アップロードの上限（MB）。登録タブの MAX_BYTES（register/word_to_rows.py）とそろえる
+maxUploadSize = 10

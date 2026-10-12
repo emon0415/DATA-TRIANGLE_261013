@@ -106,12 +106,12 @@ def show_guide():
 def show():
     show_guide()
     st.title("文書を登録する")
-    st.markdown('<p class="lead">提案書やプロジェクト関連文書（Word）をアップロードすると、章ごとに自動で分割してデータベースへ登録されます。<br>'
+    st.markdown('<p class="lead">提案書やPJ文書（Word）をアップロードすると、章ごとに自動で分割してデータベースへ登録されます。<br>'
                 '登録された内容は、「人を探す」「仲間を探す」などの検索機能にすぐ反映されます。</p>', unsafe_allow_html=True)
 
     # 登録が終わったら、アップロード欄を空に戻すために key を変える
     st.session_state.setdefault("upload_key", 0)
-    files = st.file_uploader(f"Word文書（.docx、1ファイル {MAX_BYTES // 1024 // 1024}MB まで）", type=["docx"],
+    files = st.file_uploader("Word文書（.docx）", type=["docx"],
                              accept_multiple_files=True, key=f"upload_{st.session_state.upload_key}")
 
     if st.session_state.get("registered"):
@@ -125,7 +125,8 @@ def show():
     try:
         results, existing = check_files(files)
     except Exception as e:
-        st.error(f"データベースにつながりませんでした（{e}）")
+        print(f"check_files failed: {e!r}", file=sys.stderr)  # 中身はログにだけ残し、画面には出さない
+        st.error("データベースにつながりませんでした。再読み込みしてから、アップロードしなおしてください。")
         return
 
     for filename, (rows, problems, notes) in results.items():
