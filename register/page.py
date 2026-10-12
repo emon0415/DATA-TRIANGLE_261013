@@ -106,8 +106,8 @@ def show_guide():
 def show():
     show_guide()
     st.title("文書を登録する")
-    st.markdown('<p class="lead">提案書やPJ文書（Word）をアップロードすると、章ごとに分けてデータベースに登録します。'
-                '登録した文書は、すぐ「人を探す」「仲間を探す」に出ます。</p>', unsafe_allow_html=True)
+    st.markdown('<p class="lead">提案書やプロジェクト関連文書（Word）をアップロードすると、章ごとに自動で分割してデータベースへ登録されます。<br>'
+                '登録された内容は、「人を探す」「仲間を探す」などの検索機能にすぐ反映されます。</p>', unsafe_allow_html=True)
 
     # 登録が終わったら、アップロード欄を空に戻すために key を変える
     st.session_state.setdefault("upload_key", 0)
