@@ -5,7 +5,9 @@
 """
 import streamlit as st
 
-st.set_page_config(page_title="隠れ出る杭検索", page_icon="🔎", layout="wide")
+import os
+_ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+st.set_page_config(page_title="隠れ出る杭検索", page_icon=os.path.join(_ASSETS, "one_people_icon.png"), layout="wide")
 
 st.markdown("""
 <style>
@@ -33,6 +35,14 @@ html, body, [class*="css"] { font-family: 'Noto Sans JP', sans-serif; }
 """, unsafe_allow_html=True)
 
 # ---------- 画面の切り替え ----------
+import inspect
+_LOGO = os.path.join(_ASSETS, "one_people_logo.png")
+if os.path.exists(_LOGO):                               # サイドバーの一番上にロゴ（背景は透明）。画像がなくても動く
+    try:
+        st.sidebar.image(_LOGO, width="stretch")        # 新しい版の Streamlit
+    except Exception:
+        st.sidebar.image(_LOGO, use_container_width=True)   # 古い版（1.44 など）
+
 MOCK_LOGIN_NO = "2212"      # 仲間を探す：本来はログイン中の本人。モックの仮ログイン（原 綾／第四工場 生産技術課）
 
 page = st.sidebar.radio("画面", ["人を探す", "仲間を探す", "属人化マップ", "空白地帯マップ", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed",
@@ -337,7 +347,7 @@ if page == "人を探す":
             st.button("既定に戻す", on_click=reset_roles)
     net_params = fact_params("人を探す")
 
-    st.title("隠れ出る杭検索")
+    st.title("人を探す")
     st.markdown('<p class="lead">困っていることを書くと、似た経験を持つ人を社内の文書から探します。</p>',
                 unsafe_allow_html=True)
     DEFAULT_QUERY = ("納入から15年以上たったエレベーターで、モータや巻上機が突然止まる故障が、今年だけで5件ありました。"
