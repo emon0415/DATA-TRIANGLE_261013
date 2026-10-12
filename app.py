@@ -33,7 +33,10 @@ html, body, [class*="css"] { font-family: 'Noto Sans JP', sans-serif; }
 """, unsafe_allow_html=True)
 
 # ---------- 画面の切り替え ----------
-page = st.sidebar.radio("画面", ["人を探す", "仲間を探す", "属人化マップ", "空白地帯マップ", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed")
+MOCK_LOGIN_NO = "2212"      # 仲間を探す：本来はログイン中の本人。モックの仮ログイン（原 綾／第四工場 生産技術課）
+
+page = st.sidebar.radio("画面", ["人を探す", "仲間を探す", "属人化マップ", "空白地帯マップ", "文書を登録する", "個人看板を検索（開発用）"], label_visibility="collapsed",
+                        format_func=lambda p: "仲間を探す（要ログイン）" if p == "仲間を探す" else p)   # 画面の判定は元の名前のまま。表示だけ変える
 try:                                                    # 一時的な確認用：サーバーのメモリ使用量（切り分けが終わったら消す）
     import psutil
     st.sidebar.caption(f"メモリ使用量：{psutil.Process().memory_info().rss / 1e6:,.0f} MB")
@@ -152,9 +155,12 @@ def fact_params(kind):
 
 
 def level_legend():
+    """丸の色の凡例。色の見本に、組織の近さの意味を1行ずつ添える"""
     from search import network as N
-    st.markdown("".join(f'<span class="kw" style="border-left:10px solid {c}">{l}</span>' for l, c in zip(N.LEVEL_LABELS, N.LEVEL_COLORS)),
-                unsafe_allow_html=True)
+    st.markdown("##### 丸の色＝中心の人との組織の近さ")
+    st.markdown("".join(f'<div style="margin:2px 0"><span class="kw" style="border-left:10px solid {c}">{l}</span>'
+                        f'<span style="font-size:.85em;color:#6B7785">　{h}</span></div>'
+                        for l, c, h in zip(N.LEVEL_LABELS, N.LEVEL_COLORS, N.LEVEL_HELP)), unsafe_allow_html=True)
 
 
 NET_DOCS_SHOWN = 5       # つながりマップのカードに、最初に並べる文書の数
@@ -181,11 +187,11 @@ def show_network(emp, params, where="page"):
         components.html(html, height=580)
     level_legend()
     if use_profile:
-        st.caption("丸の色は、中心の人との組織の近さ。◆は、看板（関心）は近いのに、文書では接点が薄い人＝意外なつながり。"
+        st.caption("◆は、看板（関心）は近いのに、文書では接点が薄い人＝意外なつながり。"
                    "太く短い線ほど、つながりが強い。線は、実線＝共同作業、紫の点線＝看板（関心）が近い、灰色の点線＝文書のテーマ・文章が近い。"
                    "丸にマウスを乗せると共通する語が出ます（看板の中身は出しません）。ドラッグで動かせます。丸をクリックすると、下のその人のカードに移ります。")
     else:
-        st.caption("丸の色は、中心の人との組織の近さ。太く短い線ほど、つながりが強い。実線＝共同作業、灰色の点線＝文書のテーマ・文章が近い。"
+        st.caption("太く短い線ほど、つながりが強い。実線＝共同作業、灰色の点線＝文書のテーマ・文章が近い。"
                    "この画面のつながりは、文書と組織という事実だけで描いています（看板は使っていません）。"
                    "丸にマウスを乗せると共通する語が出ます。ドラッグで動かせます。丸をクリックすると、下のその人のカードに移ります。")
     st.markdown("##### つながりマップの人")
@@ -436,7 +442,7 @@ elif page == "仲間を探す":
     st.markdown('<p class="lead">社員番号を入れると、その人とつながりの強い人が、図と一覧で見つかります。'
                 '看板（関心）の近さ、文書のテーマと文章の近さ、組織の近さをあわせて見ています。看板の中身は表示しません。</p>',
                 unsafe_allow_html=True)
-    no = st.text_input("社員番号").strip()
+    no = st.text_input("社員番号", value=MOCK_LOGIN_NO, help="本来はログインした本人の社員番号が入る。モックなので、仮の番号を入れてある。").strip()
     emp = next((e for e, v in ctx["emps"].items() if v["emp_no"] == no), None) if no else None
     if no and emp is None:
         st.warning("その社員番号は見つかりません。")
@@ -599,7 +605,8 @@ elif page == "空白地帯マップ":
                     c[f] = c.get(f, 0) + 1
         cells += [{"テーマ": g["name"], "職能": f, "未解決の文書": n} for f, n in c.items()]
     if cells:
-        with st.expander("空白地帯のテーマを、どの職能の人が出しているか", expanded=False):
+        if True:                                  # プレゼンで見せるので、折りたたまない
+            st.subheader("空白地帯のテーマを、どの職能の人が出しているか")
             heat = alt.Chart(pd.DataFrame(cells)).mark_rect().encode(
                 x=alt.X("職能:N", sort=funcs, title=None), y=alt.Y("テーマ:N", title=None),
                 color=alt.Color("未解決の文書:Q", scale=alt.Scale(scheme="oranges")), tooltip=["テーマ", "職能", "未解決の文書"])

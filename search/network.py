@@ -27,9 +27,12 @@ from collections import defaultdict
 
 import numpy as np
 
-LEVEL_LABELS = ["共同作業", "同じ課", "同じ拠点", "同じ職能", "同じ区分", "別の区分"]
+LEVEL_LABELS = ["共同作業", "同じ課", "同じ拠点", "同じ職能", "同じ種類の組織", "別の種類の組織"]
+LEVEL_HELP = ["同じ文書に名前がある", "同じ部署（課）にいる", "同じ工場・支店にいる（本社の部どうしは含めない）",
+              "仕事の種類が同じ（例：品質保証、生産技術）。本社と工場でも一致する",
+              "本社・工場・支店のどれかが同じ", "本社・工場・支店のどれも違う"]
 STRENGTH = [1.0, 0.8, 0.5, 0.3, 0.1, 0.0]        # 段階ごとの「知っている度」
-RANGE_OPTIONS = {"同じ課まで": 1, "同じ拠点まで": 2, "同じ職能まで": 3, "同じ区分まで": 4}
+RANGE_OPTIONS = {"同じ課まで": 1, "同じ拠点まで": 2, "同じ職能まで": 3, "同じ種類の組織まで": 4}
 DEFAULTS = {"t": 0.5, "range": "同じ拠点まで", "top_n": 10, "pair_min": 0.25}
 # 「人を探す」「属人化マップ」は、事実（文書・組織）だけで描く。看板は使わず、設定も出さずに固定値を使う
 FACT = {"人を探す": {"t": 0.0, "range": 1, "top_n": 10}, "属人化": {"t": 0.0, "range": 0, "top_n": 10}}   # range：1＝同じ課まで／0＝共同作業のみ
@@ -59,14 +62,60 @@ def _dept_parts(name, dept_type):
     return site, re.sub("課$", "", func)
 
 
-def _matrix(person_ids, doc_terms, docs_of, df_n):
-    """人 × 語 の TF-IDF 行列（行は長さ1に正規化）。doc_terms: {文書ID: Counter}、docs_of: {社員ID: [文書ID]}"""
+class SparseRows:
+    """行ごとに、値のある列だけを持つ行列（人 × 語）。本文の語は数万種類あり、全部を並べると何百MBにもなるため。
+    dot(i)：i 行目と、すべての行との内積（行は長さ1なので、コサイン類似度）"""
+
+    def __init__(self, rows, n_cols):
+        self.n_cols = max(n_cols, 1)
+        self.indptr = np.zeros(len(rows) + 1, dtype=np.int64)
+        idx, val = [], []
+        for r, row in enumerate(rows):
+            idx.extend(row)
+            val.extend(row.values())
+            self.indptr[r + 1] = len(idx)
+        self.indices = np.array(idx, dtype=np.int32)
+        self.data = np.array(val, dtype=np.float32)
+
+    def __len__(self):
+        return len(self.indptr) - 1
+
+    def dot(self, i):
+        a, b = self.indptr[i], self.indptr[i + 1]
+        out = np.zeros(len(self), dtype=np.float32)
+        if a == b or not len(self.data):
+            return out
+        v = np.zeros(self.n_cols, dtype=np.float32)
+        v[self.indices[a:b]] = self.data[a:b]
+        prod = self.data * v[self.indices]
+        cum = np.concatenate(([0.0], np.cumsum(prod, dtype=np.float64)))
+        return (cum[self.indptr[1:]] - cum[self.indptr[:-1]]).astype(np.float32)
+
+
+def _rows_dot(m, i):
+    """i 行目と、すべての行との内積。m は SparseRows でも、ふつうの行列でもよい"""
+    return m.dot(i) if isinstance(m, SparseRows) else m @ m[i]
+
+
+def _matrix(person_ids, doc_terms, docs_of, df_n, sparse=False):
+    """人 × 語 の TF-IDF 行列（行は長さ1に正規化）。doc_terms: {文書ID: Counter}、docs_of: {社員ID: [文書ID]}
+    sparse=True のときは SparseRows を返す（本文の語のように、語の種類が多いとき）"""
     df = defaultdict(int)
     for terms in doc_terms.values():
         for t in terms:
             df[t] += 1
     vocab = {t: i for i, t in enumerate(sorted(df))}
     idf = {t: math.log((df_n + 1) / (c + 1)) + 1 for t, c in df.items()}
+    if sparse:
+        rows = []
+        for e in person_ids:
+            row = defaultdict(float)
+            for d in docs_of.get(e, []):
+                for t, c in doc_terms.get(d, {}).items():
+                    row[vocab[t]] += (1 + math.log(c)) * idf[t]
+            n = math.sqrt(sum(x * x for x in row.values())) or 1.0
+            rows.append({k: x / n for k, x in row.items()})
+        return SparseRows(rows, len(vocab)), vocab
     m = np.zeros((len(person_ids), max(len(vocab), 1)), dtype=np.float32)
     for r, e in enumerate(person_ids):
         for d in docs_of.get(e, []):
@@ -120,7 +169,7 @@ def load(sb, ctx, profile=None):
                 text[r["doc_id"]][t] += 1
     n_docs = len(ctx["docs"])
     mk, vk = _matrix(people, kw, docs_of, n_docs)
-    mt, _ = _matrix(people, text, docs_of, n_docs)
+    mt, _ = _matrix(people, text, docs_of, n_docs, sparse=True)   # 本文の語は種類が多いので、疎な形で持つ
     mp = np.zeros((len(people), pmat.shape[1] if pmat is not None and len(pids) else 1), dtype=np.float32)
     has_p = np.zeros(len(people), dtype=bool)
     where = {e: i for i, e in enumerate(pids)}
@@ -161,7 +210,7 @@ def neighbors(net, ctx, emp, t=DEFAULTS["t"], known_range=2, top_n=DEFAULTS["top
     if emp not in net["index"]:
         return {"status": "no_docs", "people": []}
     i = net["index"][emp]
-    th, tx = net["mk"] @ net["mk"][i], net["mt"] @ net["mt"][i]
+    th, tx = net["mk"] @ net["mk"][i], _rows_dot(net["mt"], i)
     th[i] = tx[i] = 0
     has_p = net["has_p"]
     pr = (net["mp"] @ net["mp"][i]) if has_p[i] else np.zeros(len(net["people"]), dtype=np.float32)
@@ -254,7 +303,7 @@ def build_html(ctx, net, emp, nbrs, height=560, pair_min=DEFAULTS["pair_min"]):
         shared = [ctx["docs"][d]["title"] for d in r["shared_docs"] if d in ctx["docs"]]
         a, b, c, d = r["parts"]
         main = max(range(3), key=lambda k: r["parts"][k]) if a > 0 else 1 + max(range(2), key=lambda k: r["parts"][1 + k])   # 点が最も大きい項目：0＝看板、1＝テーマ、2＝文章
-        tip = [name(e), dept(e), f"組織の段階：{LEVEL_LABELS[r['level']]}",
+        tip = [name(e), dept(e), f"組織の近さ：{LEVEL_LABELS[r['level']]}（{LEVEL_HELP[r['level']]}）",
                f"つながりの強さ：{r['score']:.2f}（看板 {a:.2f}／テーマ {b:.2f}／文章 {c:.2f}／知っている度 {d + 0.0:+.2f}）"]
         if r["surprise"]:
             tip.append("◆ 意外なつながり：関心（看板）は近いが、文書では接点が薄い")
